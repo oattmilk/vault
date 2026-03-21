@@ -98,6 +98,73 @@ function NumInput({value, onChange, placeholder, style, onBlur, autoFocus}) {
     return parts.join(",");
   };
   const parse = (s) => s.replace(/\./g,"").replace(",",".");
+const { useState, useEffect } = React;
+
+// ── Formatters ──────────────────────────────────────────────────────────────
+const fmtEUR = (n) => `€${(n ?? 0).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmtIDR = (n) => `Rp${Math.round(n ?? 0).toLocaleString("id-ID")}`;
+const fmtPct = (n) => `${(n ?? 0) >= 0 ? "+" : ""}${(n ?? 0).toFixed(2)}%`;
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "";
+const todayStr = () => new Date().toISOString().split("T")[0];
+const thisMonthStr = () => new Date().toISOString().slice(0, 7);
+const thisWeekStr = () => { const d = new Date(); d.setDate(d.getDate() - d.getDay()); return d.toISOString().split("T")[0]; };
+
+const EXP_CATS = ["Food", "Groceries", "Housing", "Transport", "Entertainment", "Health", "Shopping", "Utilities", "Other"];
+const SYS_CATS = ["Subscription", "Debt"];
+const INC_CATS = ["Salary", "Freelance", "Dividend", "Gift", "Other"];
+const CAT_COLOR = { Food:"#FF6B6B",Groceries:"#FF8C42",Housing:"#FF9F43",Transport:"#FFC048",Entertainment:"#A29BFE",Health:"#74B9FF",Shopping:"#FD79A8",Utilities:"#55EFC4",Other:"#B2BEC3",Salary:"#00B894",Freelance:"#00CEC9",Dividend:"#6C5CE7",Gift:"#E17055",Subscription:"#DFE6E9",Debt:"#D63031" };
+const CAT_FALLBACKS=["#FF6B6B","#FF9F43","#FFC048","#A29BFE","#74B9FF","#FD79A8","#55EFC4","#E17055","#6C5CE7","#00CEC9","#00B894","#FDCB6E"];
+const getCatColor=(cat,customCats=[])=>{
+  const custom=customCats.find(c=>c.name===cat);
+  if(custom?.color) return custom.color;
+  if(CAT_COLOR[cat]) return CAT_COLOR[cat];
+  let hash=0; for(let i=0;i<(cat||"").length;i++) hash=cat.charCodeAt(i)+((hash<<5)-hash);
+  return CAT_FALLBACKS[Math.abs(hash)%CAT_FALLBACKS.length];
+};
+const RENEWAL = ["Monthly","Yearly","Weekly","Quarterly"];
+
+// 3 tabs: Track | Home | Vault
+const TABS = [
+  {id:"track",  icon:"±", label:"Track"},
+  {id:"home",   icon:"⌂", label:"Home"},
+  {id:"vault",  icon:"◇", label:"Vault"},
+];
+
+const SEED = {
+  transactions:[], investments:[], subscriptions:[],
+  transfers:[], goals:[], debts:[],
+  customCategories:[],
+  eurAccounts:[],
+  idrAccounts:[],
+  eurCash:0, idrCash:0,
+  // Track last used for smart defaults
+  lastCurrency: "EUR",
+  lastAccountId: null,
+  lastCategory: "Food",
+};
+
+const IS = {
+  width:"100%", padding:"10px 12px", borderRadius:8,
+  border:"1px solid var(--b2)", background:"var(--s2)",
+  color:"var(--fg)", fontSize:14, fontFamily:"var(--font)", outline:"none",
+  transition:"border-color 0.15s",
+};
+
+// ── Atoms ────────────────────────────────────────────────────────────────────
+const Lbl = ({c,children}) => <div style={{fontSize:11,letterSpacing:"0.1em",color:c||"var(--muted)",marginBottom:6,fontWeight:500}}>{children}</div>;
+
+function Field({label,col,children}) {
+  return <div style={{minWidth:0,...(col?{gridColumn:col}:{})}}><Lbl>{label}</Lbl>{children}</div>;
+}
+
+function NumInput({value, onChange, placeholder, style, onBlur, autoFocus}) {
+  const fmt = (v) => {
+    if(v===""||v===undefined||v===null) return "";
+    const parts = String(v).split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return parts.join(",");
+  };
+  const parse = (s) => s.replace(/\./g,"").replace(",",".");
   const [display, setDisplay] = useState(fmt(value));
 
   useEffect(()=>{
@@ -401,7 +468,7 @@ function Vault() {
       <div style={{padding:"24px 20px 18px",borderBottom:"1px solid var(--b1)"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <SettingsBtn data={data}/>
+            <SettingsBtn data={data} upd={upd}/>
             <div style={{fontSize:28,fontWeight:700,letterSpacing:"-1.5px",color:"var(--fg)"}}>
               vault<span style={{color:"var(--acc)"}}>.</span>
             </div>
@@ -466,9 +533,25 @@ function Track({data,upd,eurAccTotal,idrAccTotal}) {
   const [debtId,setDebtId]=useState("");
 
   const customCats=data.customCategories||[];
-  const expCats=[...EXP_CATS,...SYS_CATS,...customCats.filter(c=>c.type==="expense").map(c=>c.name)];
-  const incCats=[...INC_CATS,...customCats.filter(c=>c.type==="income").map(c=>c.name)];
+  const customNames=customCats.map(c=>c.name);
+  const expCats=[...EXP_CATS,...SYS_CATS,...customNames];
+  const incCats=[...INC_CATS,...customNames];
   const cats=mode==="income"?incCats:expCats;
+  const [showAddCat,setShowAddCat]=useState(false);
+  const [newCatName,setNewCatName]=useState("");
+  const [newCatColor,setNewCatColor]=useState("#FF6B6B");
+
+  const addQuickCat=()=>{
+    if(!newCatName.trim()) return;
+    if([...EXP_CATS,...INC_CATS,...SYS_CATS,...customNames].includes(newCatName.trim())) {
+      alert("Category already exists");
+      return;
+    }
+    upd("customCategories",[...customCats,{name:newCatName.trim(),color:newCatColor}]);
+    setCategory(newCatName.trim());
+    setNewCatName("");
+    setShowAddCat(false);
+  };
 
   // Update account when currency changes
   const handleCurrencyChange=(cur)=>{
@@ -657,9 +740,41 @@ function Track({data,upd,eurAccTotal,idrAccTotal}) {
             style={{...IS,padding:"12px",fontSize:16,fontWeight:600}}
           />
           {mode!=="transfer"&&(
-            <select value={category} onChange={e=>setCategory(e.target.value)} style={{...IS,padding:"12px"}}>
-              {cats.map(c=><option key={c}>{c}</option>)}
-            </select>
+            <div style={{position:"relative",flex:1}}>
+              <select value={category} onChange={e=>{
+                if(e.target.value==="__new__") setShowAddCat(true);
+                else setCategory(e.target.value);
+              }} style={{...IS,padding:"12px",width:"100%"}}>
+                {cats.map(c=><option key={c} value={c}>{c}</option>)}
+                <option value="__new__">+ New...</option>
+              </select>
+              {showAddCat&&(
+                <>
+                  <div onClick={()=>setShowAddCat(false)} style={{position:"fixed",inset:0,zIndex:50}}/>
+                  <div style={{position:"absolute",top:"100%",left:0,right:0,marginTop:4,background:"var(--s2)",border:"1px solid var(--b2)",borderRadius:10,padding:12,zIndex:60,boxShadow:"0 4px 20px rgba(0,0,0,0.5)"}}>
+                    <input 
+                      autoFocus
+                      placeholder="Category name" 
+                      value={newCatName} 
+                      onChange={e=>setNewCatName(e.target.value)}
+                      style={{...IS,marginBottom:8}}
+                    />
+                    <div style={{display:"flex",gap:8}}>
+                      <input 
+                        type="color" 
+                        value={newCatColor} 
+                        onChange={e=>setNewCatColor(e.target.value)}
+                        style={{width:44,height:36,padding:0,border:"none",borderRadius:6,cursor:"pointer"}}
+                      />
+                      <button onClick={addQuickCat} style={{
+                        flex:1,padding:"8px",borderRadius:6,border:"none",
+                        background:"var(--acc)",color:"#000",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"var(--font)",
+                      }}>ADD</button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           )}
           <button onClick={add} style={{
             padding:"12px 20px",borderRadius:8,border:"none",
@@ -1803,9 +1918,10 @@ function SubRow({s,i,total,del,upd,data}) {
   );
 }
 
-function SettingsBtn({data}) {
+function SettingsBtn({data,upd}) {
   const [show,setShow]=useState(false);
   const [confirmReset,setConfirmReset]=useState(false);
+  const [showCategories,setShowCategories]=useState(false);
 
   const exportData=()=>{
     const json=JSON.stringify(data,null,2);
@@ -1831,7 +1947,15 @@ function SettingsBtn({data}) {
       {show&&(
         <>
           <div onClick={()=>setShow(false)} style={{position:"fixed",inset:0,zIndex:40}}/>
-          <div style={{position:"absolute",left:0,top:"calc(100% + 8px)",background:"var(--s2)",border:"1px solid var(--b2)",borderRadius:10,zIndex:50,minWidth:160,boxShadow:"0 4px 20px rgba(0,0,0,0.5)",overflow:"hidden"}}>
+          <div style={{position:"absolute",left:0,top:"calc(100% + 8px)",background:"var(--s2)",border:"1px solid var(--b2)",borderRadius:10,zIndex:50,minWidth:180,boxShadow:"0 4px 20px rgba(0,0,0,0.5)",overflow:"hidden"}}>
+            <button onClick={()=>{setShow(false);setShowCategories(true);}} style={{
+              display:"block",width:"100%",padding:"12px 16px",border:"none",
+              borderBottom:"1px solid var(--b1)",
+              background:"transparent",color:"var(--fg)",
+              fontSize:13,fontFamily:"var(--font)",cursor:"pointer",textAlign:"left",
+            }}>
+              ◷ Manage Categories
+            </button>
             <button onClick={exportData} style={{
               display:"block",width:"100%",padding:"12px 16px",border:"none",
               borderBottom:"1px solid var(--b1)",
@@ -1851,6 +1975,9 @@ function SettingsBtn({data}) {
         </>
       )}
 
+      {/* Manage Categories Modal */}
+      <ManageCategoriesModal show={showCategories} onClose={()=>setShowCategories(false)} data={data} upd={upd}/>
+
       {/* Reset confirmation modal */}
       <Modal show={confirmReset} onClose={()=>setConfirmReset(false)} title="Reset All Data?">
         <div style={{fontSize:13,color:"var(--muted)",marginBottom:16,textAlign:"center"}}>
@@ -1868,6 +1995,85 @@ function SettingsBtn({data}) {
         </div>
       </Modal>
     </div>
+  );
+}
+
+// Manage Categories Modal
+function ManageCategoriesModal({show,onClose,data,upd}) {
+  const [newCat,setNewCat]=useState("");
+  const [newColor,setNewColor]=useState("#FF6B6B");
+  const customCats=data.customCategories||[];
+  
+  const addCat=()=>{
+    if(!newCat.trim()) return;
+    if([...EXP_CATS,...INC_CATS,...SYS_CATS].includes(newCat.trim())) return alert("Category already exists");
+    if(customCats.find(c=>c.name===newCat.trim())) return alert("Category already exists");
+    upd("customCategories",[...customCats,{name:newCat.trim(),color:newColor}]);
+    setNewCat("");
+  };
+
+  const delCat=(name)=>{
+    upd("customCategories",customCats.filter(c=>c.name!==name));
+  };
+
+  if(!show) return null;
+
+  return (
+    <Modal show={show} onClose={onClose} title="Manage Categories">
+      <div style={{marginBottom:16}}>
+        <div style={{fontSize:11,color:"var(--muted)",marginBottom:8,letterSpacing:"0.05em"}}>DEFAULT EXPENSE</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+          {EXP_CATS.map(c=>(
+            <span key={c} style={{fontSize:11,padding:"4px 8px",borderRadius:6,background:getCatColor(c),color:"#fff"}}>{c}</span>
+          ))}
+        </div>
+      </div>
+
+      <div style={{marginBottom:16}}>
+        <div style={{fontSize:11,color:"var(--muted)",marginBottom:8,letterSpacing:"0.05em"}}>DEFAULT INCOME</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+          {INC_CATS.map(c=>(
+            <span key={c} style={{fontSize:11,padding:"4px 8px",borderRadius:6,background:getCatColor(c),color:"#fff"}}>{c}</span>
+          ))}
+        </div>
+      </div>
+
+      {customCats.length>0&&(
+        <div style={{marginBottom:16}}>
+          <div style={{fontSize:11,color:"var(--muted)",marginBottom:8,letterSpacing:"0.05em"}}>CUSTOM</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {customCats.map(c=>(
+              <div key={c.name} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--s2)",padding:"8px 12px",borderRadius:8}}>
+                <span style={{fontSize:12,padding:"4px 8px",borderRadius:6,background:c.color,color:"#fff"}}>{c.name}</span>
+                <button onClick={()=>delCat(c.name)} style={{background:"none",border:"none",color:"var(--red)",fontSize:16,cursor:"pointer"}}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{borderTop:"1px solid var(--b1)",paddingTop:16}}>
+        <div style={{fontSize:11,color:"var(--muted)",marginBottom:8,letterSpacing:"0.05em"}}>ADD CUSTOM CATEGORY</div>
+        <div style={{display:"flex",gap:8,marginBottom:12}}>
+          <input 
+            value={newCat} 
+            onChange={e=>setNewCat(e.target.value)} 
+            placeholder="Category name"
+            style={{flex:1,padding:"10px 12px",borderRadius:8,border:"1px solid var(--b2)",background:"var(--s2)",color:"var(--fg)",fontSize:13,fontFamily:"var(--font)"}}
+          />
+          <input 
+            type="color" 
+            value={newColor} 
+            onChange={e=>setNewColor(e.target.value)}
+            style={{width:44,height:44,padding:0,border:"none",borderRadius:8,cursor:"pointer"}}
+          />
+        </div>
+        <button onClick={addCat} style={{
+          width:"100%",padding:"12px",borderRadius:8,border:"none",
+          background:"var(--acc)",color:"#fff",fontSize:12,fontFamily:"var(--font)",cursor:"pointer",fontWeight:700,
+        }}>+ ADD CATEGORY</button>
+      </div>
+    </Modal>
   );
 }
 
