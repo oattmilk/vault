@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vault+</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; width: 100%; background: #050505; }
+    body { font-family: 'Space Grotesk', sans-serif; -webkit-font-smoothing: antialiased; color: #F0F0F0; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #444; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useEffect } = React;
+
+// ── Config ──────────────────────────────────────────────────────────────────
+const STORAGE_KEY = "vault_v4";
+
+// ── Formatters ──────────────────────────────────────────────────────────────
+const fmtEUR = (n) => `€${(n ?? 0).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmtIDR = (n) => `Rp${Math.round(n ?? 0).toLocaleString("id-ID")}`;
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "";
+const thisMonthStr = () => new Date().toISOString().slice(0, 7);
+
+const getCatColor = (cat, categories = []) => {
+  const found = categories.find(c => c.name === cat);
+  if (found?.color) return found.color;
+  const fallbacks = ["#FF6B6B","#FF9F43","#FFC048","#A29BFE","#74B9FF","#FD79A8","#55EFC4","#E17055"];
+  let hash = 0;
+  for (let i = 0; i < (cat || "").length; i++) hash = cat.charCodeAt(i) + ((hash << 5) - hash);
+  return fallbacks[Math.abs(hash) % fallbacks.length];
+};
+
+// ── Styles ──────────────────────────────────────────────────────────────────
+const colors = {
+  bg: "#050505",
+  surface: "#0A0A0A",
+  card: "#101010",
+  cardHover: "#141414",
+  border: "#1a1a1a",
+  borderLight: "#252525",
+  fg: "#F0F0F0",
+  muted: "#666",
+  dim: "#444",
+  acc: "#00C9A7",
+  accDim: "rgba(0,201,167,0.15)",
+  red: "#FF6B6B",
+  blue: "#74B9FF",
+  amber: "#F9CA24",
+  purple: "#A29BFE",
+};
+
+// ── Components ──────────────────────────────────────────────────────────────
+
+function Card({ children, style, hover = false }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => hover && setHovered(true)}
+      onMouseLeave={() => hover && setHovered(false)}
+      style={{
+        background: hovered ? colors.cardHover : colors.card,
+        border: `1px solid ${colors.border}`,
+        borderRadius: 16,
+        padding: 24,
+        transition: "all 0.2s ease",
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function StatCard({ label, value, subValue, color = colors.acc }) {
+  return (
+    <Card style={{ flex: 1 }}>
+      <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.1em", marginBottom: 8, textTransform: "uppercase" }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 600, color, letterSpacing: "-1px" }}>{value}</div>
+      {subValue && <div style={{ fontSize: 14, color: colors.blue, marginTop: 4 }}>{subValue}</div>}
+    </Card>
+  );
+}
+
+function MiniAccounts({ accounts }) {
+  if (accounts.length === 0) return null;
+  return (
+    <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+      {accounts.map((acc, i) => (
+        <div
+          key={i}
+          style={{
+            background: colors.card,
+            border: `1px solid ${colors.border}`,
+            borderRadius: 10,
+            padding: "12px 18px",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: acc.currency === "EUR" ? colors.acc : colors.blue }} />
+          <span style={{ fontSize: 13, color: colors.muted }}>{acc.name}</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: colors.fg }}>
+            {acc.currency === "EUR" ? fmtEUR(acc.balance) : fmtIDR(acc.balance)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BudgetBar({ name, spent, budget, color }) {
+  const pct = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
+  const over = spent > budget;
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+        <span style={{ fontSize: 13, color: colors.fg }}>{name}</span>
+        <span style={{ fontSize: 12, color: over ? colors.red : colors.muted }}>
+          {fmtEUR(spent)} / {fmtEUR(budget)}
+        </span>
+      </div>
+      <div style={{ height: 6, background: colors.border, borderRadius: 3, overflow: "hidden" }}>
+        <div
+          style={{
+            width: `${pct}%`,
+            height: "100%",
+            background: over ? colors.red : color,
+            borderRadius: 3,
+            transition: "width 0.5s ease",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function DonutChart({ data, size = 180 }) {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  if (total === 0) return <div style={{ color: colors.muted, fontSize: 13 }}>No spending data</div>;
+
+  const cx = size / 2, cy = size / 2, r = size * 0.38, inner = size * 0.26;
+  let cumAngle = -Math.PI / 2;
+
+  const slices = data.map(({ cat, value, color }) => {
+    const angle = (value / total) * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(cumAngle);
+    const y1 = cy + r * Math.sin(cumAngle);
+    cumAngle += angle;
+    const x2 = cx + r * Math.cos(cumAngle);
+    const y2 = cy + r * Math.sin(cumAngle);
+    const xi1 = cx + inner * Math.cos(cumAngle - angle);
+    const yi1 = cy + inner * Math.sin(cumAngle - angle);
+    const xi2 = cx + inner * Math.cos(cumAngle);
+    const yi2 = cy + inner * Math.sin(cumAngle);
+    const large = angle > Math.PI ? 1 : 0;
+    const d = `M${xi1},${yi1} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} L${xi2},${yi2} A${inner},${inner} 0 ${large},0 ${xi1},${yi1} Z`;
+    return { cat, value, pct: ((value / total) * 100).toFixed(0), d, color };
+  });
+
+  return (
+    <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+      <svg width={size} height={size} style={{ flexShrink: 0 }}>
+        {slices.map((s, i) => (
+          <path key={i} d={s.d} fill={s.color} opacity={0.85} style={{ transition: "opacity 0.2s" }} />
+        ))}
+      </svg>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {slices.slice(0, 6).map((s, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: s.color }} />
+            <span style={{ fontSize: 12, color: colors.muted }}>{s.cat}</span>
+            <span style={{ fontSize: 12, color: colors.fg, marginLeft: "auto" }}>{s.pct}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UpcomingBills({ transactions, subscriptions, debts }) {
+  const upcoming = [
+    ...transactions.filter(t => t.pending).map(t => ({ date: t.date, name: t.note || t.category, amount: t.amount, currency: t.currency })),
+    ...subscriptions.map(s => ({ date: s.nextDate, name: s.name, amount: s.amount, currency: s.currency })),
+    ...debts.filter(d => d.remaining > 0).map(d => ({ date: d.nextDate, name: d.name, amount: d.monthly, currency: d.currency })),
+  ].filter(b => b.date).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5);
+
+  if (upcoming.length === 0) return <div style={{ color: colors.muted, fontSize: 13 }}>No upcoming bills</div>;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {upcoming.map((bill, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ fontSize: 11, color: colors.muted, width: 50 }}>{fmtDate(bill.date)}</div>
+          <div style={{ flex: 1, fontSize: 13, color: colors.fg }}>{bill.name}</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: colors.red }}>
+            {bill.currency === "EUR" ? fmtEUR(bill.amount) : fmtIDR(bill.amount)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TrendChart({ data, months = 6 }) {
+  if (data.length === 0) return <div style={{ color: colors.muted, fontSize: 13 }}>No trend data</div>;
+
+  const maxVal = Math.max(...data.map(d => d.value), 1);
+  const width = 100 / data.length;
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "flex-end", height: 120, gap: 4, marginBottom: 8 }}>
+        {data.map((d, i) => (
+          <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div
+              style={{
+                width: "70%",
+                height: `${(d.value / maxVal) * 100}%`,
+                minHeight: 4,
+                background: `linear-gradient(180deg, ${colors.acc} 0%, ${colors.accDim} 100%)`,
+                borderRadius: 4,
+                transition: "height 0.5s ease",
+              }}
+            />
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 4 }}>
+        {data.map((d, i) => (
+          <div key={i} style={{ flex: 1, textAlign: "center", fontSize: 10, color: colors.muted }}>{d.label}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Sidebar({ page, setPage }) {
+  const items = [
+    { id: "overview", icon: "◐", label: "Overview" },
+    { id: "accounts", icon: "◇", label: "Accounts" },
+    { id: "budgets", icon: "▤", label: "Budgets" },
+    { id: "analytics", icon: "◴", label: "Analytics" },
+  ];
+
+  return (
+    <div style={{
+      width: 220,
+      background: colors.surface,
+      borderRight: `1px solid ${colors.border}`,
+      padding: "32px 16px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 8,
+      height: "100vh",
+      position: "fixed",
+      left: 0,
+      top: 0,
+    }}>
+      <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-1px", marginBottom: 32, paddingLeft: 12 }}>
+        vault<span style={{ color: colors.acc }}>+</span>
+      </div>
+      {items.map(item => (
+        <button
+          key={item.id}
+          onClick={() => setPage(item.id)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "12px 16px",
+            borderRadius: 10,
+            border: "none",
+            background: page === item.id ? colors.accDim : "transparent",
+            color: page === item.id ? colors.acc : colors.muted,
+            fontSize: 14,
+            fontFamily: "inherit",
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+            textAlign: "left",
+          }}
+        >
+          <span style={{ fontSize: 18 }}>{item.icon}</span>
+          <span>{item.label}</span>
+        </button>
+      ))}
+      <div style={{ flex: 1 }} />
+      <div style={{ fontSize: 11, color: colors.dim, paddingLeft: 12 }}>
+        Synced with vault.
+      </div>
+    </div>
+  );
+}
+
+function Overview({ data }) {
+  const allAccounts = [
+    ...(data.eurAccounts || []).map(a => ({ ...a, currency: "EUR" })),
+    ...(data.idrAccounts || []).map(a => ({ ...a, currency: "IDR" })),
+  ];
+
+  const eurTotal = (data.eurAccounts || []).reduce((s, a) => s + (a.balance || 0), 0) + (data.eurCash || 0);
+  const idrTotal = (data.idrAccounts || []).reduce((s, a) => s + (a.balance || 0), 0) + (data.idrCash || 0);
+  const eurDebt = (data.debts || []).filter(d => d.currency === "EUR").reduce((s, d) => s + (d.remaining || 0), 0);
+  const idrDebt = (data.debts || []).filter(d => d.currency === "IDR").reduce((s, d) => s + (d.remaining || 0), 0);
+
+  const thisMonth = thisMonthStr();
+  const monthTx = (data.transactions || []).filter(t => t.date?.startsWith(thisMonth) && !t.pending);
+  const income = monthTx.filter(t => t.type === "income").reduce((s, t) => s + (t.currency === "EUR" ? t.amount : 0), 0);
+  const expenses = monthTx.filter(t => t.type === "expense").reduce((s, t) => s + (t.currency === "EUR" ? t.amount : 0), 0);
+
+  // Spending by category for donut
+  const catSpend = {};
+  monthTx.filter(t => t.type === "expense" && t.currency === "EUR").forEach(t => {
+    catSpend[t.category] = (catSpend[t.category] || 0) + t.amount;
+  });
+  const donutData = Object.entries(catSpend)
+    .map(([cat, value]) => ({ cat, value, color: getCatColor(cat, data.categories) }))
+    .sort((a, b) => b.value - a.value);
+
+  // Budget vs actual (using pockets as budgets)
+  const pockets = (data.goals || []).filter(g => g.type === "spending" && g.goal > 0);
+  const budgetData = pockets.map(p => {
+    const spent = monthTx
+      .filter(t => t.type === "expense" && t.pocketId === p.id)
+      .reduce((s, t) => s + t.amount, 0);
+    return { name: p.name, spent, budget: p.goal, color: getCatColor(p.name, data.categories) };
+  });
+
+  // Trend data (last 6 months)
+  const trendData = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const m = d.toISOString().slice(0, 7);
+    const label = d.toLocaleDateString("en-US", { month: "short" });
+    const value = (data.transactions || [])
+      .filter(t => t.date?.startsWith(m) && t.type === "expense" && t.currency === "EUR" && !t.pending)
+      .reduce((s, t) => s + t.amount, 0);
+    trendData.push({ label, value });
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* Top stats */}
+      <div style={{ display: "flex", gap: 16 }}>
+        <StatCard label="Net Worth" value={fmtEUR(eurTotal - eurDebt)} subValue={fmtIDR(idrTotal - idrDebt)} />
+        <StatCard label="This Month" value={`+${fmtEUR(income)}`} subValue={`-${fmtEUR(expenses)}`} color={income >= expenses ? colors.acc : colors.red} />
+      </div>
+
+      {/* Mini accounts */}
+      <MiniAccounts accounts={allAccounts} />
+
+      {/* Budget vs Actual */}
+      {budgetData.length > 0 && (
+        <Card>
+          <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.1em", marginBottom: 16, textTransform: "uppercase" }}>Budget vs Actual</div>
+          {budgetData.map((b, i) => (
+            <BudgetBar key={i} {...b} />
+          ))}
+        </Card>
+      )}
+
+      {/* Donut + Upcoming */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <Card>
+          <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.1em", marginBottom: 16, textTransform: "uppercase" }}>Spending Breakdown</div>
+          <DonutChart data={donutData} />
+        </Card>
+        <Card>
+          <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.1em", marginBottom: 16, textTransform: "uppercase" }}>Upcoming Bills</div>
+          <UpcomingBills transactions={data.transactions || []} subscriptions={data.subscriptions || []} debts={data.debts || []} />
+        </Card>
+      </div>
+
+      {/* Trend */}
+      <Card>
+        <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.1em", marginBottom: 16, textTransform: "uppercase" }}>Spending Trend (6 Months)</div>
+        <TrendChart data={trendData} />
+      </Card>
+    </div>
+  );
+}
+
+function Accounts({ data }) {
+  const allAccounts = [
+    ...(data.eurAccounts || []).map(a => ({ ...a, currency: "EUR" })),
+    ...(data.idrAccounts || []).map(a => ({ ...a, currency: "IDR" })),
+  ];
+
+  const pockets = data.goals || [];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.1em", textTransform: "uppercase" }}>Accounts</div>
+      
+      {allAccounts.length === 0 ? (
+        <Card><div style={{ color: colors.muted }}>No accounts yet. Add accounts in vault. mobile app.</div></Card>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+          {allAccounts.map((acc, i) => {
+            const accPockets = pockets.filter(p => p.accountId === acc.id);
+            return (
+              <Card key={i} hover>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>{acc.name}</div>
+                  <div style={{ fontSize: 11, color: acc.currency === "EUR" ? colors.acc : colors.blue, background: acc.currency === "EUR" ? colors.accDim : "rgba(116,185,255,0.15)", padding: "4px 8px", borderRadius: 6 }}>{acc.currency}</div>
+                </div>
+                <div style={{ fontSize: 24, fontWeight: 600, color: colors.fg, marginBottom: 16 }}>
+                  {acc.currency === "EUR" ? fmtEUR(acc.balance) : fmtIDR(acc.balance)}
+                </div>
+                {accPockets.length > 0 && (
+                  <div style={{ borderTop: `1px solid ${colors.border}`, paddingTop: 12 }}>
+                    <div style={{ fontSize: 10, color: colors.muted, marginBottom: 8 }}>POCKETS</div>
+                    {accPockets.map((p, j) => (
+                      <div key={j} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                        <span style={{ color: colors.muted }}>{p.emoji} {p.name}</span>
+                        <span style={{ color: colors.fg }}>{acc.currency === "EUR" ? fmtEUR(p.saved) : fmtIDR(p.saved)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Budgets({ data }) {
+  const pockets = data.goals || [];
+  const spending = pockets.filter(p => p.type === "spending");
+  const saving = pockets.filter(p => p.type === "saving");
+
+  const thisMonth = thisMonthStr();
+  const monthTx = (data.transactions || []).filter(t => t.date?.startsWith(thisMonth) && !t.pending && t.type === "expense");
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {spending.length > 0 && (
+        <>
+          <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.1em", textTransform: "uppercase" }}>Spending Budgets</div>
+          <Card>
+            {spending.map((p, i) => {
+              const spent = monthTx.filter(t => t.pocketId === p.id).reduce((s, t) => s + t.amount, 0);
+              return <BudgetBar key={i} name={`${p.emoji} ${p.name}`} spent={spent} budget={p.goal || 0} color={getCatColor(p.name, data.categories)} />;
+            })}
+          </Card>
+        </>
+      )}
+
+      {saving.length > 0 && (
+        <>
+          <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.1em", textTransform: "uppercase" }}>Savings Goals</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+            {saving.map((p, i) => {
+              const pct = p.goal > 0 ? Math.min((p.saved / p.goal) * 100, 100) : 0;
+              return (
+                <Card key={i} hover>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                    <span style={{ fontSize: 24 }}>{p.emoji}</span>
+                    <span style={{ fontSize: 16, fontWeight: 600 }}>{p.name}</span>
+                  </div>
+                  <div style={{ fontSize: 24, fontWeight: 600, color: colors.acc }}>{fmtEUR(p.saved)}</div>
+                  <div style={{ fontSize: 12, color: colors.muted, marginBottom: 12 }}>of {fmtEUR(p.goal)}</div>
+                  <div style={{ height: 8, background: colors.border, borderRadius: 4, overflow: "hidden" }}>
+                    <div style={{ width: `${pct}%`, height: "100%", background: colors.acc, borderRadius: 4 }} />
+                  </div>
+                  <div style={{ fontSize: 11, color: colors.muted, marginTop: 8 }}>{pct.toFixed(0)}% complete</div>
+                </Card>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {pockets.length === 0 && (
+        <Card><div style={{ color: colors.muted }}>No budgets or goals yet. Create pockets in vault. mobile app.</div></Card>
+      )}
+    </div>
+  );
+}
+
+function Analytics({ data }) {
+  // Category breakdown over time
+  const categories = data.categories || [];
+  const transactions = data.transactions || [];
+
+  // Monthly totals
+  const monthlyData = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const m = d.toISOString().slice(0, 7);
+    const label = d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+    const expenses = transactions
+      .filter(t => t.date?.startsWith(m) && t.type === "expense" && t.currency === "EUR" && !t.pending)
+      .reduce((s, t) => s + t.amount, 0);
+    const income = transactions
+      .filter(t => t.date?.startsWith(m) && t.type === "income" && t.currency === "EUR" && !t.pending)
+      .reduce((s, t) => s + t.amount, 0);
+    monthlyData.push({ label, expenses, income, net: income - expenses });
+  }
+
+  // Top categories all time
+  const catTotals = {};
+  transactions.filter(t => t.type === "expense" && t.currency === "EUR" && !t.pending).forEach(t => {
+    catTotals[t.category] = (catTotals[t.category] || 0) + t.amount;
+  });
+  const topCats = Object.entries(catTotals)
+    .map(([cat, value]) => ({ cat, value, color: getCatColor(cat, categories) }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+
+  const maxCat = Math.max(...topCats.map(c => c.value), 1);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.1em", textTransform: "uppercase" }}>12 Month Overview</div>
+      <Card>
+        <div style={{ display: "flex", alignItems: "flex-end", height: 160, gap: 8, marginBottom: 12 }}>
+          {monthlyData.map((d, i) => {
+            const maxVal = Math.max(...monthlyData.map(m => Math.max(m.expenses, m.income)), 1);
+            return (
+              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                <div style={{ width: "40%", height: `${(d.income / maxVal) * 100}%`, minHeight: 2, background: colors.acc, borderRadius: 2, opacity: 0.7 }} />
+                <div style={{ width: "40%", height: `${(d.expenses / maxVal) * 100}%`, minHeight: 2, background: colors.red, borderRadius: 2, opacity: 0.7 }} />
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          {monthlyData.map((d, i) => (
+            <div key={i} style={{ flex: 1, textAlign: "center", fontSize: 9, color: colors.muted }}>{d.label}</div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 24, marginTop: 16, justifyContent: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: colors.acc }} />
+            <span style={{ fontSize: 11, color: colors.muted }}>Income</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: colors.red }} />
+            <span style={{ fontSize: 11, color: colors.muted }}>Expenses</span>
+          </div>
+        </div>
+      </Card>
+
+      <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.1em", textTransform: "uppercase" }}>Top Spending Categories</div>
+      <Card>
+        {topCats.length === 0 ? (
+          <div style={{ color: colors.muted }}>No spending data yet</div>
+        ) : (
+          topCats.map((c, i) => (
+            <div key={i} style={{ marginBottom: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                <span style={{ fontSize: 13, color: colors.fg }}>{c.cat}</span>
+                <span style={{ fontSize: 13, color: colors.muted }}>{fmtEUR(c.value)}</span>
+              </div>
+              <div style={{ height: 6, background: colors.border, borderRadius: 3 }}>
+                <div style={{ width: `${(c.value / maxCat) * 100}%`, height: "100%", background: c.color, borderRadius: 3 }} />
+              </div>
+            </div>
+          ))
+        )}
+      </Card>
+    </div>
+  );
+}
+
+// ── Main App ────────────────────────────────────────────────────────────────
+
+function VaultPlus() {
+  const [page, setPage] = useState("overview");
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Try to load from localStorage
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        setData(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse data:", e);
+      }
+    }
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", color: colors.muted }}>
+        Loading...
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: 16 }}>
+        <div style={{ fontSize: 32, fontWeight: 700 }}>vault<span style={{ color: colors.acc }}>+</span></div>
+        <div style={{ color: colors.muted, textAlign: "center", maxWidth: 400, lineHeight: 1.6 }}>
+          No data found. Open vault. on your mobile device and export your data, then import it here.
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <label style={{
+            display: "inline-block",
+            padding: "12px 24px",
+            background: colors.acc,
+            color: "#000",
+            borderRadius: 8,
+            cursor: "pointer",
+            fontSize: 14,
+            fontWeight: 600,
+          }}>
+            Import JSON
+            <input
+              type="file"
+              accept=".json"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    try {
+                      const imported = JSON.parse(ev.target.result);
+                      localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
+                      setData(imported);
+                    } catch (err) {
+                      alert("Invalid JSON file");
+                    }
+                  };
+                  reader.readAsText(file);
+                }
+              }}
+            />
+          </label>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", minHeight: "100vh", background: colors.bg }}>
+      <Sidebar page={page} setPage={setPage} />
+      <div style={{ marginLeft: 220, flex: 1, padding: 32 }}>
+        <div style={{ maxWidth: 1000 }}>
+          {page === "overview" && <Overview data={data} />}
+          {page === "accounts" && <Accounts data={data} />}
+          {page === "budgets" && <Budgets data={data} />}
+          {page === "analytics" && <Analytics data={data} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<VaultPlus />);
+  </script>
+</body>
+</html>
