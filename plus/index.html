@@ -53,7 +53,7 @@ const getMonthName = (key) => {
 const C = {
   bg: "#050505", surface: "#0a0a0a", border: "#1a1a1a",
   fg: "#E8E8E8", muted: "#666", dim: "#444",
-  acc: "#C4B5FD", green: "#00C9A7", red: "#FF6B6B", blue: "#74B9FF", amber: "#F9CA24", purple: "#C4B5FD",
+  acc: "#C4B5FD", green: "#00C9A7", red: "#FF6B6B", blue: "#74B9FF", amber: "#F9CA24", purple: "#C4B5FD", pink: "#E879F9",
 };
 
 const getCatColor = (cat, categories = []) => {
@@ -839,7 +839,7 @@ function DebtsSubsView({ data, upd }) {
   const subColumns = [
     { key: "name", label: "Subscription", style: { fontWeight: 500 } },
     { key: "currency", label: "Cur", render: v => <span style={{ color: v === "EUR" ? C.green : C.blue }}>{v}</span> },
-    { key: "amount", label: "Amount", style: { textAlign: "right" }, render: (v, row) => fmtAmt(v, row.currency) },
+    { key: "amount", label: "Amount", style: { textAlign: "right" }, render: (v, row) => <span style={{ color: C.pink }}>{fmtAmt(v, row.currency)}</span> },
     { key: "renewal", label: "Renewal" },
     { key: "nextDate", label: "Next Date", render: v => fmtDate(v) },
     { key: "actions", label: "", style: { width: 50 }, render: (_, row) => (
@@ -851,7 +851,7 @@ function DebtsSubsView({ data, upd }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div style={{ display: "flex", gap: 12 }}>
         <StatBox label="Total Debt" value={fmtEUR(eurDebt)} color={C.red} />
-        <StatBox label="Monthly Subs" value={fmtEUR(eurSubsMonthly)} color={C.purple} />
+        <StatBox label="Monthly Subs" value={fmtEUR(eurSubsMonthly)} color={C.pink} />
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
