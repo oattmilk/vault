@@ -389,7 +389,7 @@ function Vault() {
       "--b1":"#1E1E1E","--b2":"#252525",
       "--fg":"#F0F0F0","--muted":"#666","--dim":"#2a2a2a",
       "--acc":"#C4B5FD","--green":"#00C9A7","--red":"#FF6B6B","--amber":"#F9CA24",
-      "--blue":"#74B9FF","--purple":"#C4B5FD",
+      "--blue":"#74B9FF","--purple":"#C4B5FD","--pink":"#E879F9",
       fontFamily:"var(--font)",background:"var(--bg)",
       minHeight:"100vh",color:"var(--fg)",maxWidth:430,margin:"0 auto",paddingBottom:100,
     }}>
@@ -1194,17 +1194,17 @@ function VaultTab({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurI
         subtitle={subs.length > 0 ? `${subs.length} subscription${subs.length>1?"s":""}` : "No subscriptions"}
         amounts={subs.length > 0 && (
           <>
-            <span style={{color:"var(--purple)",fontWeight:600}}>{fmtEUR(subMonthlyEUR)}/mo</span>
+            <span style={{color:"var(--pink)",fontWeight:600}}>{fmtEUR(subMonthlyEUR)}/mo</span>
             <span style={{color:"var(--muted)"}}>·</span>
-            <span style={{color:"var(--purple)",fontWeight:600}}>{fmtEUR(subYearlyEUR)}/yr</span>
+            <span style={{color:"var(--pink)",fontWeight:600}}>{fmtEUR(subYearlyEUR)}/yr</span>
           </>
         )}
         icon="🔄"
         expanded={expanded==="subs"} 
         onToggle={()=>toggle("subs")}
-        action={<AddBtn label="Add Subscription" color="var(--purple)" component={<AddSubBtn subForm={subForm} setSubForm={setSubForm} addSub={addSub} data={data} allAccounts={allAccounts} label="+ Add Subscription"/>}/>}
+        action={<AddBtn label="Add Subscription" color="var(--acc)" component={<AddSubBtn subForm={subForm} setSubForm={setSubForm} addSub={addSub} data={data} allAccounts={allAccounts} label="+ Add Subscription"/>}/>}
         empty={subs.length===0}
-        color="var(--purple)"
+        color="var(--acc)"
       >
         <div style={{display:"flex",flexDirection:"column"}}>
           {subs.map((s,i)=><SubRow key={s.id} s={s} i={i} total={subs.length} del={delSub} upd={upd} data={data}/>)}
@@ -1462,13 +1462,13 @@ function AddSubBtn({subForm,setSubForm,addSub,data,allAccounts,label}) {
     <>
       <button onClick={()=>setShow(true)} style={{
         padding:"8px 14px",borderRadius:20,
-        border:"1px solid var(--purple)",background:"transparent",
-        color:"var(--purple)",fontSize:12,fontFamily:"var(--font)",cursor:"pointer",fontWeight:500,
+        border:"1px solid var(--acc)",background:"transparent",
+        color:"var(--acc)",fontSize:12,fontFamily:"var(--font)",cursor:"pointer",fontWeight:500,
       }}>{label || "+ Add"}</button>
       <Modal show={show} onClose={()=>setShow(false)} title="New Subscription">
         <div style={{display:"flex",gap:6,marginBottom:12}}>
           {["EUR","IDR"].map(c=>(
-            <PillBtn key={c} active={subForm.currency===c} onClick={()=>setSubForm(f=>({...f,currency:c,accountId:""}))} color="var(--purple)">{c}</PillBtn>
+            <PillBtn key={c} active={subForm.currency===c} onClick={()=>setSubForm(f=>({...f,currency:c,accountId:""}))} color="var(--acc)">{c}</PillBtn>
           ))}
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
@@ -1485,7 +1485,7 @@ function AddSubBtn({subForm,setSubForm,addSub,data,allAccounts,label}) {
           </Field>
           <DatePicker label="NEXT RENEWAL DATE" value={subForm.nextDate} onChange={v=>setSubForm(f=>({...f,nextDate:v}))}/>
         </div>
-        <ActionBtn onClick={()=>{addSub();setShow(false);}} color="var(--purple)">ADD SUBSCRIPTION</ActionBtn>
+        <ActionBtn onClick={()=>{addSub();setShow(false);}} color="var(--acc)">ADD SUBSCRIPTION</ActionBtn>
       </Modal>
     </>
   );
@@ -1798,10 +1798,10 @@ function SubRow({s,i,total,del,upd,data}) {
           </div>
           <DatePicker label="NEXT RENEWAL" value={editForm.nextDate} onChange={v=>setEditForm(f=>({...f,nextDate:v}))}/>
         </div>
-        <ActionBtn onClick={saveEdit} color="var(--purple)">SAVE</ActionBtn>
+        <ActionBtn onClick={saveEdit} color="var(--acc)">SAVE</ActionBtn>
       </Modal>
 
-      <div style={{width:36,height:36,borderRadius:10,background:"rgba(162,155,254,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"var(--purple)",flexShrink:0}}>
+      <div style={{width:36,height:36,borderRadius:10,background:"rgba(196,181,253,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"var(--acc)",flexShrink:0}}>
         {s.name[0].toUpperCase()}
       </div>
       <div style={{flex:1,minWidth:0}}>
@@ -1812,7 +1812,7 @@ function SubRow({s,i,total,del,upd,data}) {
         </div>
       </div>
       <div style={{textAlign:"right",flexShrink:0}}>
-        <div style={{fontSize:14,fontWeight:700,color:"var(--purple)"}}>{fmt(s.amount)}</div>
+        <div style={{fontSize:14,fontWeight:700,color:"var(--pink)"}}>{fmt(s.amount)}</div>
       </div>
       <MenuBtn openUp items={[
         {label:"Edit",action:()=>{setEditForm({name:s.name,amount:s.amount,renewal:s.renewal,nextDate:s.nextDate||""});setShowEdit(true);}},
