@@ -36,7 +36,11 @@ const STORAGE_KEY = "vault_v4";
 const fmtEUR = (n) => new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(n ?? 0);
 const fmtIDR = (n) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n ?? 0);
 const fmtAmt = (n, cur) => cur === "EUR" ? fmtEUR(n) : fmtIDR(n);
-const fmtDate = (d) => d || "—";
+const fmtDate = (d) => {
+  if (!d) return "—";
+  const date = new Date(d);
+  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+};
 const todayStr = () => new Date().toISOString().split("T")[0];
 const getMonthKey = (d) => d?.slice(0, 7) || "";
 const getMonthName = (key) => {
@@ -61,16 +65,53 @@ const getCatColor = (cat, categories = []) => {
 
 function Tabs({ tabs, active, onChange }) {
   return (
-    <div style={{ display: "flex", gap: 4, background: C.surface, padding: 4, borderRadius: 8 }}>
+    <div style={{ display: "flex", gap: 4 }}>
       {tabs.map(t => (
         <button key={t.id} onClick={() => onChange(t.id)} style={{
           padding: "8px 16px", borderRadius: 6, border: "none", cursor: "pointer",
-          background: active === t.id ? "#1a1a1a" : "transparent",
-          color: active === t.id ? C.fg : C.muted,
+          background: active === t.id ? "rgba(0,201,167,0.1)" : "transparent",
+          color: active === t.id ? C.acc : C.muted,
           fontWeight: 500, fontSize: 12,
         }}>{t.label}</button>
       ))}
     </div>
+  );
+}
+
+const inputStyle = {
+  width: "100%", padding: "10px 12px", borderRadius: 6,
+  border: `1px solid ${C.border}`, background: "#0d0d0d", color: C.fg, fontSize: 13,
+};
+
+function Modal({ show, onClose, title, children }) {
+  if (!show) return null;
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100 }} />
+      <div style={{
+        position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+        background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
+        padding: 24, zIndex: 101, width: 400, maxWidth: "90vw",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>{title}</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: C.muted, fontSize: 20, cursor: "pointer" }}>×</button>
+        </div>
+        {children}
+      </div>
+    </>
+  );
+}
+
+function Btn({ children, onClick, disabled, danger, secondary }) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      padding: "10px 16px", borderRadius: 6, border: secondary ? `1px solid ${C.border}` : "none",
+      background: danger ? C.red : secondary ? "transparent" : C.acc,
+      color: danger || !secondary ? "#000" : C.muted,
+      fontSize: 12, fontWeight: 600, cursor: disabled ? "default" : "pointer",
+      opacity: disabled ? 0.5 : 1,
+    }}>{children}</button>
   );
 }
 
@@ -524,6 +565,12 @@ function MonthlyView({ data }) {
 
 // ── Accounts View ───────────────────────────────────────────────────────────
 function AccountsView({ data, upd }) {
+  const [showModal, setShowModal] = useState(false);
+  const [editAcc, setEditAcc] = useState(null);
+  const [formName, setFormName] = useState("");
+  const [formBalance, setFormBalance] = useState("");
+  const [formCurrency, setFormCurrency] = useState("EUR");
+
   const allAccounts = [
     ...(data.eurAccounts || []).map(a => ({ ...a, currency: "EUR" })),
     ...(data.idrAccounts || []).map(a => ({ ...a, currency: "IDR" })),
@@ -534,10 +581,56 @@ function AccountsView({ data, upd }) {
   const eurTotal = (data.eurAccounts || []).reduce((s, a) => s + (a.balance || 0), 0);
   const idrTotal = (data.idrAccounts || []).reduce((s, a) => s + (a.balance || 0), 0);
 
+  const openAdd = () => {
+    setEditAcc(null);
+    setFormName("");
+    setFormBalance("");
+    setFormCurrency("EUR");
+    setShowModal(true);
+  };
+
+  const openEdit = (acc) => {
+    setEditAcc(acc);
+    setFormName(acc.name);
+    setFormBalance(acc.balance?.toString() || "0");
+    setFormCurrency(acc.currency);
+    setShowModal(true);
+  };
+
+  const save = () => {
+    if (!formName.trim()) return;
+    const acc = { id: editAcc?.id || Date.now(), name: formName.trim(), balance: parseFloat(formBalance) || 0 };
+    const key = formCurrency === "EUR" ? "eurAccounts" : "idrAccounts";
+    const accs = data[key] || [];
+
+    if (editAcc) {
+      if (editAcc.currency !== formCurrency) {
+        const oldKey = editAcc.currency === "EUR" ? "eurAccounts" : "idrAccounts";
+        upd(oldKey, (data[oldKey] || []).filter(a => a.id !== editAcc.id));
+        upd(key, [...accs, acc]);
+      } else {
+        upd(key, accs.map(a => a.id === editAcc.id ? acc : a));
+      }
+    } else {
+      upd(key, [...accs, acc]);
+    }
+    setShowModal(false);
+  };
+
+  const deleteAcc = () => {
+    if (!confirm(`Delete ${editAcc.name}?`)) return;
+    const key = editAcc.currency === "EUR" ? "eurAccounts" : "idrAccounts";
+    upd(key, (data[key] || []).filter(a => a.id !== editAcc.id));
+    setShowModal(false);
+  };
+
   const columns = [
     { key: "name", label: "Account", style: { fontWeight: 500 } },
     { key: "currency", label: "Currency", render: v => <span style={{ color: v === "EUR" ? C.acc : C.blue }}>{v}</span> },
     { key: "balance", label: "Balance", style: { textAlign: "right", fontWeight: 600 }, render: (v, row) => fmtAmt(v, row.currency) },
+    { key: "actions", label: "", style: { width: 60 }, render: (_, row) => (
+      <button onClick={(e) => { e.stopPropagation(); openEdit(row); }} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 11 }}>Edit</button>
+    )},
   ];
 
   const pocketColumns = [
@@ -562,9 +655,12 @@ function AccountsView({ data, upd }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div style={{ display: "flex", gap: 12 }}>
-        <StatBox label="EUR Total" value={fmtEUR(eurTotal)} color={C.acc} />
-        <StatBox label="IDR Total" value={fmtIDR(idrTotal)} color={C.blue} />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 12 }}>
+          <StatBox label="EUR Total" value={fmtEUR(eurTotal)} color={C.acc} />
+          <StatBox label="IDR Total" value={fmtIDR(idrTotal)} color={C.blue} />
+        </div>
+        <Btn onClick={openAdd}>+ Add Account</Btn>
       </div>
 
       <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Accounts</div>
@@ -576,35 +672,168 @@ function AccountsView({ data, upd }) {
           <DataTable columns={pocketColumns} data={pockets} sortable={false} />
         </>
       )}
+
+      <Modal show={showModal} onClose={() => setShowModal(false)} title={editAcc ? "Edit Account" : "Add Account"}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>CURRENCY</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {["EUR", "IDR"].map(c => (
+                <button key={c} onClick={() => setFormCurrency(c)} style={{
+                  flex: 1, padding: "8px", borderRadius: 6,
+                  border: `1px solid ${formCurrency === c ? C.amber : C.border}`,
+                  background: formCurrency === c ? "rgba(249,202,36,0.1)" : "transparent",
+                  color: formCurrency === c ? C.amber : C.muted,
+                  fontSize: 12, cursor: "pointer",
+                }}>{c}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>NAME</div>
+            <input value={formName} onChange={e => setFormName(e.target.value)} placeholder="Account name" style={inputStyle} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>BALANCE</div>
+            <input type="number" value={formBalance} onChange={e => setFormBalance(e.target.value)} placeholder="0" style={inputStyle} />
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            {editAcc && <Btn onClick={deleteAcc} danger>Delete</Btn>}
+            <div style={{ flex: 1 }} />
+            <Btn onClick={() => setShowModal(false)} secondary>Cancel</Btn>
+            <Btn onClick={save} disabled={!formName.trim()}>Save</Btn>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
 
 // ── Debts & Subs View ───────────────────────────────────────────────────────
-function DebtsSubsView({ data }) {
+function DebtsSubsView({ data, upd }) {
+  const [showDebtModal, setShowDebtModal] = useState(false);
+  const [showSubModal, setShowSubModal] = useState(false);
+  const [editDebt, setEditDebt] = useState(null);
+  const [editSub, setEditSub] = useState(null);
+  
+  // Debt form
+  const [debtName, setDebtName] = useState("");
+  const [debtTotal, setDebtTotal] = useState("");
+  const [debtRemaining, setDebtRemaining] = useState("");
+  const [debtMonthly, setDebtMonthly] = useState("");
+  const [debtCurrency, setDebtCurrency] = useState("EUR");
+
+  // Sub form
+  const [subName, setSubName] = useState("");
+  const [subAmount, setSubAmount] = useState("");
+  const [subCurrency, setSubCurrency] = useState("EUR");
+  const [subRenewal, setSubRenewal] = useState("Monthly");
+  const [subNextDate, setSubNextDate] = useState(todayStr());
+
   const debts = data.debts || [];
   const subs = data.subscriptions || [];
 
   const eurDebt = debts.filter(d => d.currency === "EUR").reduce((s, d) => s + (d.remaining || 0), 0);
   const eurSubsMonthly = subs.filter(s => s.currency === "EUR" && s.renewal === "Monthly").reduce((s, sub) => s + sub.amount, 0);
 
+  // Debt handlers
+  const openAddDebt = () => {
+    setEditDebt(null);
+    setDebtName(""); setDebtTotal(""); setDebtRemaining(""); setDebtMonthly(""); setDebtCurrency("EUR");
+    setShowDebtModal(true);
+  };
+
+  const openEditDebt = (d) => {
+    setEditDebt(d);
+    setDebtName(d.name); setDebtTotal(d.total?.toString() || ""); 
+    setDebtRemaining(d.remaining?.toString() || ""); setDebtMonthly(d.monthly?.toString() || "");
+    setDebtCurrency(d.currency || "EUR");
+    setShowDebtModal(true);
+  };
+
+  const saveDebt = () => {
+    if (!debtName.trim() || !debtTotal) return;
+    const debt = {
+      id: editDebt?.id || Date.now(),
+      name: debtName.trim(),
+      total: parseFloat(debtTotal) || 0,
+      remaining: parseFloat(debtRemaining) || parseFloat(debtTotal) || 0,
+      monthly: parseFloat(debtMonthly) || 0,
+      currency: debtCurrency,
+    };
+    if (editDebt) {
+      upd("debts", debts.map(d => d.id === editDebt.id ? debt : d));
+    } else {
+      upd("debts", [...debts, debt]);
+    }
+    setShowDebtModal(false);
+  };
+
+  const deleteDebt = () => {
+    if (!confirm(`Delete ${editDebt.name}?`)) return;
+    upd("debts", debts.filter(d => d.id !== editDebt.id));
+    setShowDebtModal(false);
+  };
+
+  // Sub handlers
+  const openAddSub = () => {
+    setEditSub(null);
+    setSubName(""); setSubAmount(""); setSubCurrency("EUR"); setSubRenewal("Monthly"); setSubNextDate(todayStr());
+    setShowSubModal(true);
+  };
+
+  const openEditSub = (s) => {
+    setEditSub(s);
+    setSubName(s.name); setSubAmount(s.amount?.toString() || "");
+    setSubCurrency(s.currency || "EUR"); setSubRenewal(s.renewal || "Monthly");
+    setSubNextDate(s.nextDate || todayStr());
+    setShowSubModal(true);
+  };
+
+  const saveSub = () => {
+    if (!subName.trim() || !subAmount) return;
+    const sub = {
+      id: editSub?.id || Date.now(),
+      name: subName.trim(),
+      amount: parseFloat(subAmount) || 0,
+      currency: subCurrency,
+      renewal: subRenewal,
+      nextDate: subNextDate,
+    };
+    if (editSub) {
+      upd("subscriptions", subs.map(s => s.id === editSub.id ? sub : s));
+    } else {
+      upd("subscriptions", [...subs, sub]);
+    }
+    setShowSubModal(false);
+  };
+
+  const deleteSub = () => {
+    if (!confirm(`Delete ${editSub.name}?`)) return;
+    upd("subscriptions", subs.filter(s => s.id !== editSub.id));
+    setShowSubModal(false);
+  };
+
   const debtColumns = [
     { key: "name", label: "Debt", style: { fontWeight: 500 } },
     { key: "currency", label: "Cur", render: v => <span style={{ color: v === "EUR" ? C.acc : C.blue }}>{v}</span> },
     { key: "total", label: "Total", style: { textAlign: "right" }, render: (v, row) => fmtAmt(v, row.currency) },
-    { key: "remaining", label: "Remaining", style: { textAlign: "right", color: C.red }, render: (v, row) => <span style={{ color: C.red }}>{fmtAmt(v, row.currency)}</span> },
+    { key: "remaining", label: "Remaining", style: { textAlign: "right" }, render: (v, row) => <span style={{ color: C.red }}>{fmtAmt(v, row.currency)}</span> },
     { key: "monthly", label: "Monthly", style: { textAlign: "right" }, render: (v, row) => fmtAmt(v, row.currency) },
-    { key: "progress", label: "Paid", style: { width: 120 }, render: (_, row) => {
+    { key: "progress", label: "Paid", style: { width: 100 }, render: (_, row) => {
       const pct = row.total > 0 ? ((row.total - row.remaining) / row.total) * 100 : 0;
       return (
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div style={{ flex: 1, height: 4, background: C.border, borderRadius: 2 }}>
             <div style={{ width: `${pct}%`, height: "100%", background: C.acc, borderRadius: 2 }} />
           </div>
-          <span style={{ fontSize: 11, color: C.muted }}>{pct.toFixed(0)}%</span>
+          <span style={{ fontSize: 10, color: C.muted }}>{pct.toFixed(0)}%</span>
         </div>
       );
     }},
+    { key: "actions", label: "", style: { width: 50 }, render: (_, row) => (
+      <button onClick={(e) => { e.stopPropagation(); openEditDebt(row); }} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 11 }}>Edit</button>
+    )},
   ];
 
   const subColumns = [
@@ -612,7 +841,10 @@ function DebtsSubsView({ data }) {
     { key: "currency", label: "Cur", render: v => <span style={{ color: v === "EUR" ? C.acc : C.blue }}>{v}</span> },
     { key: "amount", label: "Amount", style: { textAlign: "right" }, render: (v, row) => fmtAmt(v, row.currency) },
     { key: "renewal", label: "Renewal" },
-    { key: "nextDate", label: "Next Date" },
+    { key: "nextDate", label: "Next Date", render: v => fmtDate(v) },
+    { key: "actions", label: "", style: { width: 50 }, render: (_, row) => (
+      <button onClick={(e) => { e.stopPropagation(); openEditSub(row); }} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 11 }}>Edit</button>
+    )},
   ];
 
   return (
@@ -622,19 +854,113 @@ function DebtsSubsView({ data }) {
         <StatBox label="Monthly Subs" value={fmtEUR(eurSubsMonthly)} color={C.purple} />
       </div>
 
-      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Debts</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Debts</div>
+        <Btn onClick={openAddDebt}>+ Add Debt</Btn>
+      </div>
       {debts.length === 0 ? (
         <div style={{ color: C.muted, background: C.surface, padding: 24, borderRadius: 8 }}>No debts 🎉</div>
       ) : (
         <DataTable columns={debtColumns} data={debts} sortable={false} />
       )}
 
-      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Subscriptions</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Subscriptions</div>
+        <Btn onClick={openAddSub}>+ Add Subscription</Btn>
+      </div>
       {subs.length === 0 ? (
         <div style={{ color: C.muted, background: C.surface, padding: 24, borderRadius: 8 }}>No subscriptions</div>
       ) : (
         <DataTable columns={subColumns} data={subs} sortable={false} />
       )}
+
+      {/* Debt Modal */}
+      <Modal show={showDebtModal} onClose={() => setShowDebtModal(false)} title={editDebt ? "Edit Debt" : "Add Debt"}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>CURRENCY</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {["EUR", "IDR"].map(c => (
+                <button key={c} onClick={() => setDebtCurrency(c)} style={{
+                  flex: 1, padding: "8px", borderRadius: 6,
+                  border: `1px solid ${debtCurrency === c ? C.amber : C.border}`,
+                  background: debtCurrency === c ? "rgba(249,202,36,0.1)" : "transparent",
+                  color: debtCurrency === c ? C.amber : C.muted, fontSize: 12, cursor: "pointer",
+                }}>{c}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>NAME</div>
+            <input value={debtName} onChange={e => setDebtName(e.target.value)} placeholder="e.g. Car Loan" style={inputStyle} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>TOTAL</div>
+              <input type="number" value={debtTotal} onChange={e => setDebtTotal(e.target.value)} placeholder="0" style={inputStyle} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>REMAINING</div>
+              <input type="number" value={debtRemaining} onChange={e => setDebtRemaining(e.target.value)} placeholder="0" style={inputStyle} />
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>MONTHLY PAYMENT</div>
+            <input type="number" value={debtMonthly} onChange={e => setDebtMonthly(e.target.value)} placeholder="0" style={inputStyle} />
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            {editDebt && <Btn onClick={deleteDebt} danger>Delete</Btn>}
+            <div style={{ flex: 1 }} />
+            <Btn onClick={() => setShowDebtModal(false)} secondary>Cancel</Btn>
+            <Btn onClick={saveDebt} disabled={!debtName.trim() || !debtTotal}>Save</Btn>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Sub Modal */}
+      <Modal show={showSubModal} onClose={() => setShowSubModal(false)} title={editSub ? "Edit Subscription" : "Add Subscription"}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>CURRENCY</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {["EUR", "IDR"].map(c => (
+                <button key={c} onClick={() => setSubCurrency(c)} style={{
+                  flex: 1, padding: "8px", borderRadius: 6,
+                  border: `1px solid ${subCurrency === c ? C.amber : C.border}`,
+                  background: subCurrency === c ? "rgba(249,202,36,0.1)" : "transparent",
+                  color: subCurrency === c ? C.amber : C.muted, fontSize: 12, cursor: "pointer",
+                }}>{c}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>NAME</div>
+            <input value={subName} onChange={e => setSubName(e.target.value)} placeholder="e.g. Netflix" style={inputStyle} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>AMOUNT</div>
+              <input type="number" value={subAmount} onChange={e => setSubAmount(e.target.value)} placeholder="0" style={inputStyle} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>RENEWAL</div>
+              <select value={subRenewal} onChange={e => setSubRenewal(e.target.value)} style={inputStyle}>
+                {["Monthly", "Yearly", "Weekly", "Quarterly"].map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>NEXT DATE</div>
+            <input type="date" value={subNextDate} onChange={e => setSubNextDate(e.target.value)} style={inputStyle} />
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            {editSub && <Btn onClick={deleteSub} danger>Delete</Btn>}
+            <div style={{ flex: 1 }} />
+            <Btn onClick={() => setShowSubModal(false)} secondary>Cancel</Btn>
+            <Btn onClick={saveSub} disabled={!subName.trim() || !subAmount}>Save</Btn>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -748,7 +1074,7 @@ function VaultPlus() {
         {tab === "transactions" && <TransactionsView data={data} upd={upd} />}
         {tab === "monthly" && <MonthlyView data={data} />}
         {tab === "accounts" && <AccountsView data={data} upd={upd} />}
-        {tab === "debts" && <DebtsSubsView data={data} />}
+        {tab === "debts" && <DebtsSubsView data={data} upd={upd} />}
         {tab === "sync" && <SyncView data={data} setData={setData} />}
       </div>
     </div>
