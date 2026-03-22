@@ -241,7 +241,7 @@ function TxRow({t,onDelete,compact}) {
     <div className="txrow" style={{display:"flex",alignItems:"center",gap:10,padding:compact?"10px 0":"12px 0",borderBottom:"1px solid var(--b1)",opacity:t.pending?0.7:1}}>
       <div style={{width:compact?32:36,height:compact?32:36,borderRadius:10,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
         background:t.pending?"rgba(249,202,36,0.1)":isInc?"rgba(0,184,148,0.12)":"rgba(255,107,107,0.1)",
-        fontSize:compact?12:14,color:t.pending?"var(--amber)":isInc?"var(--acc)":"var(--red)"}}>
+        fontSize:compact?12:14,color:t.pending?"var(--amber)":isInc?"var(--green)":"var(--red)"}}>
         {t.pending?"⏳":isInc?"↑":"↓"}
       </div>
       <div style={{flex:1,minWidth:0}}>
@@ -253,7 +253,7 @@ function TxRow({t,onDelete,compact}) {
         </div>
         <div style={{fontSize:11,color:"var(--muted)"}}>{t.category} · {fmtDate(t.date)} · {t.accountName||t.currency}</div>
       </div>
-      <div style={{fontSize:compact?13:14,fontWeight:700,color:t.pending?"var(--amber)":isInc?"var(--acc)":"var(--red)",whiteSpace:"nowrap"}}>
+      <div style={{fontSize:compact?13:14,fontWeight:700,color:t.pending?"var(--amber)":isInc?"var(--green)":"var(--red)",whiteSpace:"nowrap"}}>
         {isInc?"+":"−"}{fmt(t.amount)}
       </div>
       {onDelete && <button className="del" onClick={()=>onDelete(t.id)} style={{background:"none",border:"none",color:"var(--muted)",fontSize:18,cursor:"pointer",lineHeight:1,padding:"0 2px",flexShrink:0}}>×</button>}
@@ -388,8 +388,8 @@ function Vault() {
       "--bg":"#0A0A0A","--s1":"#111111","--s2":"#161616",
       "--b1":"#1E1E1E","--b2":"#252525",
       "--fg":"#F0F0F0","--muted":"#666","--dim":"#2a2a2a",
-      "--acc":"#00C9A7","--red":"#FF6B6B","--amber":"#F9CA24",
-      "--blue":"#74B9FF","--purple":"#A29BFE",
+      "--acc":"#C4B5FD","--green":"#00C9A7","--red":"#FF6B6B","--amber":"#F9CA24",
+      "--blue":"#74B9FF","--purple":"#C4B5FD",
       fontFamily:"var(--font)",background:"var(--bg)",
       minHeight:"100vh",color:"var(--fg)",maxWidth:430,margin:"0 auto",paddingBottom:100,
     }}>
@@ -423,7 +423,7 @@ function Vault() {
           </div>
           <div style={{textAlign:"right"}}>
             <div style={{fontSize:9,color:"var(--muted)",marginBottom:3,letterSpacing:"0.1em"}}>NET WORTH</div>
-            <div style={{fontSize:15,fontWeight:700,color:"var(--acc)",letterSpacing:"-0.5px"}}>{fmtEUR(eurNetWorth-eurDebtTotal)}</div>
+            <div style={{fontSize:15,fontWeight:700,color:"var(--green)",letterSpacing:"-0.5px"}}>{fmtEUR(eurNetWorth-eurDebtTotal)}</div>
             <div style={{fontSize:12,color:"var(--blue)",marginTop:1}}>{fmtIDR(idrNetWorth-idrDebtTotal)}</div>
           </div>
         </div>
@@ -608,7 +608,7 @@ function Track({data,upd,eurAccTotal,idrAccTotal}) {
   },[]);
 
   const recentTx=data.transactions.filter(t=>!t.pending).slice(0,10);
-  const modeColor={expense:"var(--red)",income:"var(--acc)",transfer:"var(--blue)"};
+  const modeColor={expense:"var(--red)",income:"var(--green)",transfer:"var(--blue)"};
 
   return (
     <div>
@@ -829,7 +829,7 @@ function Home({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurInvTo
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
             <div>
               <Lbl>EUR</Lbl>
-              <div style={{fontSize:26,fontWeight:700,color:eurAccTotal>=0?"var(--acc)":"var(--red)",letterSpacing:"-1.5px",lineHeight:1}}>{fmtEUR(eurAccTotal)}</div>
+              <div style={{fontSize:26,fontWeight:700,color:eurAccTotal>=0?"var(--green)":"var(--red)",letterSpacing:"-1.5px",lineHeight:1}}>{fmtEUR(eurAccTotal)}</div>
             </div>
             <div>
               <Lbl>IDR</Lbl>
@@ -896,7 +896,7 @@ function Home({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurInvTo
                     <div style={{fontSize:13,fontWeight:600,color:"var(--fg)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.note||t.category}</div>
                     <div style={{fontSize:11,color:"var(--muted)",marginTop:1}}>{daysLeft===0?"Today":daysLeft===1?"Tomorrow":`in ${daysLeft}d`}</div>
                   </div>
-                  <div style={{fontSize:14,fontWeight:700,color:t.type==="income"?"var(--acc)":"var(--red)",whiteSpace:"nowrap"}}>{t.type==="income"?"+":"−"}{tfmt(t.amount)}</div>
+                  <div style={{fontSize:14,fontWeight:700,color:t.type==="income"?"var(--green)":"var(--red)",whiteSpace:"nowrap"}}>{t.type==="income"?"+":"−"}{tfmt(t.amount)}</div>
                 </div>
               );
             })}
@@ -927,7 +927,7 @@ function Home({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurInvTo
             </div>
             <div>
               <div style={{fontSize:10,color:"var(--muted)",marginBottom:3}}>SAVED</div>
-              <div style={{fontSize:15,fontWeight:700,color:savRate>=0?"var(--acc)":"var(--red)"}}>{savRate.toFixed(0)}%</div>
+              <div style={{fontSize:15,fontWeight:700,color:savRate>=0?"var(--green)":"var(--red)"}}>{savRate.toFixed(0)}%</div>
             </div>
           </div>
 
@@ -1218,7 +1218,7 @@ function VaultTab({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurI
         amounts={investments.length > 0 && (
           <>
             <span style={{color:"var(--acc)",fontWeight:600}}>{fmtEUR(invTotalValue)}</span>
-            <span style={{color:invGain>=0?"var(--acc)":"var(--red)",fontWeight:600}}>({invGain>=0?"+":""}{fmtEUR(invGain)})</span>
+            <span style={{color:invGain>=0?"var(--green)":"var(--red)",fontWeight:600}}>({invGain>=0?"+":""}{fmtEUR(invGain)})</span>
           </>
         )}
         icon="📈"
