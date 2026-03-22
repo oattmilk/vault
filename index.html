@@ -839,7 +839,7 @@ function Home({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurInvTo
           <div style={{paddingTop:14,borderTop:"1px solid var(--b1)",display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
             <div>
               <div style={{fontSize:10,color:"var(--muted)",marginBottom:2}}>NET WORTH</div>
-              <div style={{fontSize:13,fontWeight:700,color:"var(--acc)"}}>{fmtEUR(eurTrueNetWorth)}</div>
+              <div style={{fontSize:13,fontWeight:700,color:"var(--green)"}}>{fmtEUR(eurTrueNetWorth)}</div>
               {(idrNetWorth-idrDebtTotal)!==0&&<div style={{fontSize:11,fontWeight:600,color:"var(--blue)",marginTop:1}}>{fmtIDR(idrNetWorth-idrDebtTotal)}</div>}
             </div>
             <div>
@@ -870,9 +870,9 @@ function Home({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurInvTo
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
                       <span style={{fontSize:16}}>{g.emoji}</span>
                       <span style={{fontSize:13,fontWeight:600,color:"var(--fg)"}}>{g.name}</span>
-                      <span style={{fontSize:10,padding:"2px 6px",borderRadius:4,background:isSaving?"rgba(116,185,255,0.15)":"rgba(0,201,167,0.1)",color:isSaving?"var(--blue)":"var(--acc)"}}>{isSaving?"SAVING":"SPENDING"}</span>
+                      <span style={{fontSize:10,padding:"2px 6px",borderRadius:4,background:isSaving?"rgba(116,185,255,0.15)":"rgba(0,201,167,0.1)",color:isSaving?"var(--blue)":"var(--green)"}}>{isSaving?"SAVING":"SPENDING"}</span>
                     </div>
-                    <span style={{fontSize:14,fontWeight:700,color:g.saved<0?"var(--red)":isSaving?"var(--blue)":"var(--acc)"}}>{pFmt(g.saved)}</span>
+                    <span style={{fontSize:14,fontWeight:700,color:g.saved<0?"var(--red)":isSaving?"var(--blue)":"var(--green)"}}>{pFmt(g.saved)}</span>
                   </div>
                   {isSaving&&g.target>0&&<ProgressBar pct={Math.min(pct,100)} color={pct>=100?"var(--acc)":"var(--blue)"}/>}
                 </div>
@@ -919,7 +919,7 @@ function Home({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurInvTo
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:16}}>
             <div>
               <div style={{fontSize:10,color:"var(--muted)",marginBottom:3}}>INCOME</div>
-              <div style={{fontSize:15,fontWeight:700,color:"var(--acc)"}}>{fmt(inc)}</div>
+              <div style={{fontSize:15,fontWeight:700,color:"var(--green)"}}>{fmt(inc)}</div>
             </div>
             <div>
               <div style={{fontSize:10,color:"var(--muted)",marginBottom:3}}>SPENT</div>
@@ -1106,7 +1106,7 @@ function VaultTab({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurI
   const toggle=(section)=>setExpanded(e=>e===section?null:section);
 
   // Colored amount spans helper
-  const eurAmt = (v,color="var(--acc)") => <span style={{color,fontWeight:600}}>{fmtEUR(v)}</span>;
+  const eurAmt = (v,color="var(--green)") => <span style={{color,fontWeight:600}}>{fmtEUR(v)}</span>;
   const idrAmt = (v,color="var(--blue)") => <span style={{color,fontWeight:600}}>{fmtIDR(v)}</span>;
 
   return (
@@ -1217,7 +1217,7 @@ function VaultTab({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurI
         subtitle={investments.length > 0 ? `${investments.length} position${investments.length>1?"s":""}` : "No investments"}
         amounts={investments.length > 0 && (
           <>
-            <span style={{color:"var(--acc)",fontWeight:600}}>{fmtEUR(invTotalValue)}</span>
+            <span style={{color:"var(--green)",fontWeight:600}}>{fmtEUR(invTotalValue)}</span>
             <span style={{color:invGain>=0?"var(--green)":"var(--red)",fontWeight:600}}>({invGain>=0?"+":""}{fmtEUR(invGain)})</span>
           </>
         )}
@@ -1340,8 +1340,8 @@ function InvestCard({inv,upd,investments}) {
           <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{inv.type} · {inv.currency}</div>
         </div>
         <div style={{textAlign:"right"}}>
-          <div style={{fontSize:16,fontWeight:700,color:inv.currency==="EUR"?"var(--acc)":"var(--blue)"}}>{fmt(parseFloat(inv.currentValue)||0)}</div>
-          <div style={{fontSize:11,color:g>=0?"var(--acc)":"var(--red)",marginTop:2}}>{g>=0?"+":""}{fmt(g)} ({p>=0?"+":""}{p.toFixed(1)}%)</div>
+          <div style={{fontSize:16,fontWeight:700,color:inv.currency==="EUR"?"var(--green)":"var(--blue)"}}>{fmt(parseFloat(inv.currentValue)||0)}</div>
+          <div style={{fontSize:11,color:g>=0?"var(--green)":"var(--red)",marginTop:2}}>{g>=0?"+":""}{fmt(g)} ({p>=0?"+":""}{p.toFixed(1)}%)</div>
         </div>
         <MenuBtn items={[
           {label:"Edit",action:()=>{setEditForm({name:inv.name,type:inv.type,totalInvested:inv.totalInvested,currentValue:inv.currentValue,notes:inv.notes||""});setShowEdit(true);}},
@@ -1581,7 +1581,7 @@ function AccountCard({acc,fmt,freeToSpend,accGoals,upd,data,updGoalSaved,delGoal
           <div style={{flex:1}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{fontSize:15,fontWeight:700,color:"var(--fg)"}}>{acc.name}</span>
-              <span style={{fontSize:10,padding:"2px 6px",borderRadius:4,background:isEUR?"rgba(0,201,167,0.1)":"rgba(116,185,255,0.1)",color:isEUR?"var(--acc)":"var(--blue)"}}>{acc.currency}</span>
+              <span style={{fontSize:10,padding:"2px 6px",borderRadius:4,background:isEUR?"rgba(0,201,167,0.1)":"rgba(116,185,255,0.1)",color:isEUR?"var(--green)":"var(--blue)"}}>{acc.currency}</span>
             </div>
             {acc.note&&<div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{acc.note}</div>}
           </div>
@@ -1596,7 +1596,7 @@ function AccountCard({acc,fmt,freeToSpend,accGoals,upd,data,updGoalSaved,delGoal
         {accGoals.length>0&&(
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10,paddingTop:10,borderTop:"1px solid var(--b1)"}}>
             <span style={{fontSize:12,color:"var(--muted)"}}>🆓 Free to spend</span>
-            <span style={{fontSize:14,fontWeight:700,color:freeToSpend>=0?"var(--acc)":"var(--red)"}}>{fmt(freeToSpend)}</span>
+            <span style={{fontSize:14,fontWeight:700,color:freeToSpend>=0?"var(--green)":"var(--red)"}}>{fmt(freeToSpend)}</span>
           </div>
         )}
       </div>
@@ -1678,10 +1678,10 @@ function PocketRow({g,fmt,updGoalSaved,delGoal,allPockets}) {
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontSize:16}}>{g.emoji}</span>
             <span style={{fontSize:13,fontWeight:600,color:"var(--fg)"}}>{g.name}</span>
-            <span style={{fontSize:9,padding:"2px 5px",borderRadius:4,background:isSaving?"rgba(116,185,255,0.15)":"rgba(0,201,167,0.1)",color:isSaving?"var(--blue)":"var(--acc)"}}>{isSaving?"SAVE":"SPEND"}</span>
+            <span style={{fontSize:9,padding:"2px 5px",borderRadius:4,background:isSaving?"rgba(116,185,255,0.15)":"rgba(0,201,167,0.1)",color:isSaving?"var(--blue)":"var(--green)"}}>{isSaving?"SAVE":"SPEND"}</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:6}}>
-            <span style={{fontSize:14,fontWeight:700,color:g.saved<0?"var(--red)":isSaving?"var(--blue)":"var(--acc)"}}>{fmt(g.saved)}</span>
+            <span style={{fontSize:14,fontWeight:700,color:g.saved<0?"var(--red)":isSaving?"var(--blue)":"var(--green)"}}>{fmt(g.saved)}</span>
             <MenuBtn items={[
               {label:"Top up",action:()=>setMode("topup")},
               {label:"Move",action:()=>setMode("move")},
