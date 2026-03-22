@@ -53,7 +53,7 @@ const getMonthName = (key) => {
 const C = {
   bg: "#050505", surface: "#0a0a0a", border: "#1a1a1a",
   fg: "#E8E8E8", muted: "#666", dim: "#444",
-  acc: "#A78BFA", green: "#00C9A7", red: "#FF6B6B", blue: "#74B9FF", amber: "#F9CA24", purple: "#A78BFA",
+  acc: "#C4B5FD", green: "#00C9A7", red: "#FF6B6B", blue: "#74B9FF", amber: "#F9CA24", purple: "#C4B5FD",
 };
 
 const getCatColor = (cat, categories = []) => {
@@ -69,8 +69,8 @@ function Tabs({ tabs, active, onChange }) {
       {tabs.map(t => (
         <button key={t.id} onClick={() => onChange(t.id)} style={{
           padding: "8px 16px", borderRadius: 6, border: "none", cursor: "pointer",
-          background: active === t.id ? "rgba(167,139,250,0.1)" : "transparent",
-          color: active === t.id ? C.acc : C.muted,
+          background: active === t.id ? "rgba(167,139,250,0.15)" : "transparent",
+          color: active === t.id ? "#C4B5FD" : C.muted,
           fontWeight: 500, fontSize: 12,
         }}>{t.label}</button>
       ))}
