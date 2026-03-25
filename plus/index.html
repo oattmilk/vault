@@ -8,21 +8,23 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body, #root { height: 100%; width: 100%; background: #050505; }
-    body { font-family: 'Space Grotesk', sans-serif; -webkit-font-smoothing: antialiased; color: #E8E8E8; font-size: 13px; }
+    html, body, #root { height: 100%; width: 100%; background: #06060A; }
+    body { font-family: 'Outfit', sans-serif; -webkit-font-smoothing: antialiased; color: #F4F4F6; font-size: 13px; }
     ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #0a0a0a; }
-    ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
-    input, select, button { font-family: inherit; font-size: 12px; }
-    input:focus, select:focus { outline: none; border-color: #00C9A7 !important; }
+    ::-webkit-scrollbar-track { background: #0C0C12; }
+    ::-webkit-scrollbar-thumb { background: #252530; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #353540; }
+    input, select, button { font-family: inherit; font-size: 13px; }
+    input:focus, select:focus { outline: none; border-color: #C4B5FD !important; box-shadow: 0 0 0 2px rgba(196,181,253,0.12) !important; }
     table { border-collapse: collapse; width: 100%; }
-    th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #1a1a1a; }
-    th { font-size: 10px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.05em; position: sticky; top: 0; background: #0a0a0a; z-index: 1; }
-    tr:hover { background: #111; }
+    th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid #1A1A24; }
+    th { font-size: 10px; font-weight: 600; color: #6B6B78; text-transform: uppercase; letter-spacing: 0.08em; position: sticky; top: 0; background: #0C0C12; z-index: 1; }
+    tr:hover { background: rgba(196,181,253,0.03); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.3s ease forwards; }
   </style>
 </head>
 <body>
@@ -32,15 +34,29 @@ const { useState, useEffect, useMemo } = React;
 
 const STORAGE_KEY = "vault_v4";
 
-// ── Formatters ──────────────────────────────────────────────────────────────
+// ── Theme ────────────────────────────────────────────────────────────────────
+const C = {
+  bg: "#06060A",
+  s1: "#0C0C12",
+  s2: "#111118",
+  border: "#1A1A24",
+  border2: "#252530",
+  fg: "#F4F4F6",
+  muted: "#6B6B78",
+  dim: "#3A3A45",
+  acc: "#C4B5FD",
+  green: "#10B981",
+  red: "#F87171",
+  blue: "#60A5FA",
+  amber: "#FBBF24",
+  orange: "#FB923C",
+};
+
+// ── Formatters ───────────────────────────────────────────────────────────────
 const fmtEUR = (n) => new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(n ?? 0);
 const fmtIDR = (n) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n ?? 0);
 const fmtAmt = (n, cur) => cur === "EUR" ? fmtEUR(n) : fmtIDR(n);
-const fmtDate = (d) => {
-  if (!d) return "—";
-  const date = new Date(d);
-  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-};
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
 const todayStr = () => new Date().toISOString().split("T")[0];
 const getMonthKey = (d) => d?.slice(0, 7) || "";
 const getMonthName = (key) => {
@@ -49,53 +65,60 @@ const getMonthName = (key) => {
   return new Date(y, m - 1).toLocaleDateString("en-US", { month: "short", year: "numeric" });
 };
 
-// ── Colors ──────────────────────────────────────────────────────────────────
-const C = {
-  bg: "#050505", surface: "#0a0a0a", border: "#1a1a1a",
-  fg: "#E8E8E8", muted: "#666", dim: "#444",
-  acc: "#C4B5FD", green: "#00C9A7", red: "#FF6B6B", blue: "#74B9FF", amber: "#F9CA24", purple: "#C4B5FD", pink: "#E879F9",
-};
-
 const getCatColor = (cat, categories = []) => {
   const found = categories.find(c => c.name === cat);
-  return found?.color || "#666";
+  return found?.color || C.muted;
 };
 
-// ── Components ──────────────────────────────────────────────────────────────
+// ── Styled Components ────────────────────────────────────────────────────────
+const inputStyle = {
+  width: "100%", padding: "12px 14px", borderRadius: 10,
+  border: `1px solid ${C.border}`, background: C.s2, color: C.fg, fontSize: 14,
+  transition: "all 0.2s ease",
+};
+
+function GlassCard({ children, glow, style }) {
+  return (
+    <div style={{
+      background: `linear-gradient(145deg, ${C.s1} 0%, ${C.s2} 100%)`,
+      borderRadius: 16, padding: 20,
+      border: `1px solid ${glow ? "rgba(196,181,253,0.2)" : C.border}`,
+      boxShadow: glow ? "0 8px 32px rgba(0,0,0,0.2)" : "0 4px 16px rgba(0,0,0,0.12)",
+      ...style,
+    }}>{children}</div>
+  );
+}
 
 function Tabs({ tabs, active, onChange }) {
   return (
-    <div style={{ display: "flex", gap: 4 }}>
+    <div style={{ display: "flex", gap: 4, background: C.s1, padding: 4, borderRadius: 12 }}>
       {tabs.map(t => (
         <button key={t.id} onClick={() => onChange(t.id)} style={{
-          padding: "8px 16px", borderRadius: 6, border: "none", cursor: "pointer",
-          background: active === t.id ? "rgba(167,139,250,0.15)" : "transparent",
-          color: active === t.id ? "#C4B5FD" : C.muted,
-          fontWeight: 500, fontSize: 12,
+          padding: "10px 20px", borderRadius: 10, border: "none", cursor: "pointer",
+          background: active === t.id ? "rgba(196,181,253,0.12)" : "transparent",
+          color: active === t.id ? C.acc : C.muted,
+          fontWeight: 600, fontSize: 13, transition: "all 0.2s ease",
         }}>{t.label}</button>
       ))}
     </div>
   );
 }
 
-const inputStyle = {
-  width: "100%", padding: "10px 12px", borderRadius: 6,
-  border: `1px solid ${C.border}`, background: "#0d0d0d", color: C.fg, fontSize: 13,
-};
-
-function Modal({ show, onClose, title, children }) {
+function Modal({ show, onClose, title, children, width = 440 }) {
   if (!show) return null;
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100 }} />
-      <div style={{
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", zIndex: 100 }} />
+      <div className="fade-in" style={{
         position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-        background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-        padding: 24, zIndex: 101, width: 400, maxWidth: "90vw",
+        background: `linear-gradient(180deg, ${C.s1} 0%, ${C.bg} 100%)`,
+        border: `1px solid ${C.border}`, borderRadius: 20,
+        padding: 28, zIndex: 101, width, maxWidth: "90vw",
+        boxShadow: "0 24px 64px rgba(0,0,0,0.4)",
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 16, fontWeight: 600 }}>{title}</div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: C.muted, fontSize: 20, cursor: "pointer" }}>×</button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.3px" }}>{title}</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: C.dim, fontSize: 24, cursor: "pointer", transition: "color 0.15s" }}>×</button>
         </div>
         {children}
       </div>
@@ -103,29 +126,44 @@ function Modal({ show, onClose, title, children }) {
   );
 }
 
-function Btn({ children, onClick, disabled, danger, secondary }) {
+function Btn({ children, onClick, disabled, danger, secondary, color }) {
+  const bg = danger ? C.red : color || C.acc;
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      padding: "10px 16px", borderRadius: 6, border: secondary ? `1px solid ${C.border}` : "none",
-      background: danger ? C.red : secondary ? "transparent" : C.acc,
-      color: danger || !secondary ? "#000" : C.muted,
-      fontSize: 12, fontWeight: 600, cursor: disabled ? "default" : "pointer",
-      opacity: disabled ? 0.5 : 1,
+      padding: "12px 20px", borderRadius: 10, border: secondary ? `1px solid ${C.border}` : "none",
+      background: secondary ? "transparent" : bg,
+      color: secondary ? C.muted : "#000",
+      fontSize: 13, fontWeight: 600, cursor: disabled ? "default" : "pointer",
+      opacity: disabled ? 0.5 : 1, transition: "all 0.2s ease",
     }}>{children}</button>
   );
 }
 
-function StatBox({ label, value, sub, color = C.fg }) {
+function PillBtn({ active, onClick, children, color }) {
+  const ac = color || C.acc;
   return (
-    <div style={{ padding: "12px 16px", background: C.surface, borderRadius: 8, minWidth: 140 }}>
-      <div style={{ fontSize: 10, color: C.muted, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
-      <div style={{ fontSize: 18, fontWeight: 600, color }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: C.blue, marginTop: 2 }}>{sub}</div>}
-    </div>
+    <button onClick={onClick} style={{
+      padding: "8px 16px", borderRadius: 20,
+      border: `1.5px solid ${active ? ac : C.border2}`,
+      background: active ? `${ac}15` : "transparent",
+      color: active ? ac : C.muted,
+      fontSize: 12, fontWeight: active ? 600 : 500, cursor: "pointer",
+      transition: "all 0.2s ease",
+    }}>{children}</button>
   );
 }
 
-function DataTable({ columns, data, onRowClick, selectedIds, onSelect, sortable = true }) {
+function StatBox({ label, value, sub, color = C.fg, glow }) {
+  return (
+    <GlassCard glow={glow} style={{ padding: "16px 20px", minWidth: 160 }}>
+      <div style={{ fontSize: 10, color: C.muted, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color }}>{value}</div>
+      {sub && <div style={{ fontSize: 13, color: C.blue, marginTop: 4 }}>{sub}</div>}
+    </GlassCard>
+  );
+}
+
+function DataTable({ columns, data, onRowClick, sortable = true }) {
   const [sortCol, setSortCol] = useState(null);
   const [sortDir, setSortDir] = useState("desc");
 
@@ -147,13 +185,13 @@ function DataTable({ columns, data, onRowClick, selectedIds, onSelect, sortable 
   };
 
   return (
-    <div style={{ overflow: "auto", maxHeight: "calc(100vh - 220px)", background: C.surface, borderRadius: 8 }}>
+    <div style={{ overflow: "auto", maxHeight: "calc(100vh - 260px)", background: C.s1, borderRadius: 14 }}>
       <table>
         <thead>
           <tr>
-            {onSelect && <th style={{ width: 32 }}><input type="checkbox" onChange={e => onSelect(e.target.checked ? data.map(d => d.id) : [])} /></th>}
             {columns.map(col => (
-              <th key={col.key} onClick={() => sortable && toggleSort(col.key)} style={{ cursor: sortable ? "pointer" : "default", whiteSpace: "nowrap" }}>
+              <th key={col.key} onClick={() => sortable && col.sortable !== false && toggleSort(col.key)} 
+                style={{ cursor: sortable && col.sortable !== false ? "pointer" : "default", whiteSpace: "nowrap" }}>
                 {col.label} {sortCol === col.key && (sortDir === "asc" ? "↑" : "↓")}
               </th>
             ))}
@@ -161,17 +199,9 @@ function DataTable({ columns, data, onRowClick, selectedIds, onSelect, sortable 
         </thead>
         <tbody>
           {sorted.length === 0 ? (
-            <tr><td colSpan={columns.length + (onSelect ? 1 : 0)} style={{ textAlign: "center", color: C.muted, padding: 40 }}>No data</td></tr>
+            <tr><td colSpan={columns.length} style={{ textAlign: "center", color: C.muted, padding: 48 }}>No data</td></tr>
           ) : sorted.map(row => (
             <tr key={row.id} onClick={() => onRowClick?.(row)} style={{ cursor: onRowClick ? "pointer" : "default" }}>
-              {onSelect && (
-                <td onClick={e => e.stopPropagation()}>
-                  <input type="checkbox" checked={selectedIds?.includes(row.id)} onChange={e => {
-                    if (e.target.checked) onSelect([...selectedIds, row.id]);
-                    else onSelect(selectedIds.filter(id => id !== row.id));
-                  }} />
-                </td>
-              )}
               {columns.map(col => (
                 <td key={col.key} style={col.style}>{col.render ? col.render(row[col.key], row) : row[col.key]}</td>
               ))}
@@ -183,54 +213,23 @@ function DataTable({ columns, data, onRowClick, selectedIds, onSelect, sortable 
   );
 }
 
-function FilterBar({ filters, values, onChange }) {
+function Field({ label, children }) {
   return (
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-      {filters.map(f => (
-        <select key={f.key} value={values[f.key] || ""} onChange={e => onChange({ ...values, [f.key]: e.target.value })}
-          style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface, color: C.fg, fontSize: 12 }}>
-          <option value="">{f.label}: All</option>
-          {f.options.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
-      ))}
+    <div>
+      <div style={{ fontSize: 10, color: C.muted, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>{label}</div>
+      {children}
     </div>
   );
 }
 
-function MonthlyGrid({ data, months, renderCell, rowLabels }) {
-  return (
-    <div style={{ overflow: "auto", background: C.surface, borderRadius: 8 }}>
-      <table>
-        <thead>
-          <tr>
-            <th style={{ minWidth: 120 }}></th>
-            {months.map(m => <th key={m} style={{ minWidth: 100, textAlign: "right" }}>{getMonthName(m)}</th>)}
-            <th style={{ minWidth: 100, textAlign: "right", color: C.acc }}>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rowLabels.map(label => (
-            <tr key={label}>
-              <td style={{ fontWeight: 500 }}>{label}</td>
-              {months.map(m => <td key={m} style={{ textAlign: "right" }}>{renderCell(label, m)}</td>)}
-              <td style={{ textAlign: "right", fontWeight: 600, color: C.acc }}>
-                {renderCell(label, "total")}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// ── Overview View ───────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// OVERVIEW VIEW
+// ══════════════════════════════════════════════════════════════════════════════
 function OverviewView({ data }) {
   const txs = data.transactions || [];
   const thisMonth = new Date().toISOString().slice(0, 7);
   const monthTx = txs.filter(t => t.date?.startsWith(thisMonth) && !t.pending);
 
-  // Totals
   const eurAccTotal = (data.eurAccounts || []).reduce((s, a) => s + (a.balance || 0), 0);
   const idrAccTotal = (data.idrAccounts || []).reduce((s, a) => s + (a.balance || 0), 0);
   const eurDebt = (data.debts || []).filter(d => d.currency === "EUR").reduce((s, d) => s + (d.remaining || 0), 0);
@@ -239,7 +238,7 @@ function OverviewView({ data }) {
   const eurIncome = monthTx.filter(t => t.type === "income" && t.currency === "EUR").reduce((s, t) => s + t.amount, 0);
   const eurExpense = monthTx.filter(t => t.type === "expense" && t.currency === "EUR").reduce((s, t) => s + t.amount, 0);
 
-  // Spending by category (donut)
+  // Spending by category
   const catSpend = {};
   monthTx.filter(t => t.type === "expense" && t.currency === "EUR").forEach(t => {
     catSpend[t.category] = (catSpend[t.category] || 0) + t.amount;
@@ -260,10 +259,10 @@ function OverviewView({ data }) {
   }
   const trendMax = Math.max(...trendData.map(t => Math.max(t.expenses, t.income)), 1);
 
-  // Upcoming bills
+  // Upcoming
   const upcoming = [
-    ...(data.subscriptions || []).map(s => ({ name: s.name, date: s.nextDate, amount: s.amount, currency: s.currency })),
-    ...(data.debts || []).filter(d => d.remaining > 0 && d.monthly > 0).map(d => ({ name: d.name, date: d.nextDate, amount: d.monthly, currency: d.currency })),
+    ...(data.subscriptions || []).map(s => ({ name: s.name, date: s.nextDate, amount: s.amount, currency: s.currency, type: "sub" })),
+    ...(data.debts || []).filter(d => d.remaining > 0 && d.monthly > 0).map(d => ({ name: d.name, date: d.nextDate, amount: d.monthly, currency: d.currency, type: "debt" })),
   ].filter(b => b.date).sort((a, b) => (a.date || "").localeCompare(b.date || "")).slice(0, 6);
 
   // Accounts
@@ -273,34 +272,36 @@ function OverviewView({ data }) {
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Stats row */}
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <StatBox label="Net Worth (EUR)" value={fmtEUR(eurAccTotal - eurDebt)} color={C.green} />
-        <StatBox label="Net Worth (IDR)" value={fmtIDR(idrAccTotal - idrDebt)} color={C.blue} />
+    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* Hero Stats */}
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        <StatBox label="Net Worth" value={fmtEUR(eurAccTotal - eurDebt)} sub={fmtIDR(idrAccTotal - idrDebt)} color={C.green} glow />
         <StatBox label="This Month In" value={fmtEUR(eurIncome)} color={C.green} />
         <StatBox label="This Month Out" value={fmtEUR(eurExpense)} color={C.red} />
         <StatBox label="Net" value={fmtEUR(eurIncome - eurExpense)} color={eurIncome >= eurExpense ? C.green : C.red} />
       </div>
 
-      {/* Accounts row */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      {/* Accounts Quick View */}
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         {allAccounts.map((acc, i) => (
-          <div key={i} style={{ padding: "8px 14px", background: C.surface, borderRadius: 6, display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: acc.currency === "EUR" ? C.green : C.blue }} />
-            <span style={{ color: C.muted, fontSize: 12 }}>{acc.name}</span>
-            <span style={{ fontWeight: 600, fontSize: 13 }}>{fmtAmt(acc.balance, acc.currency)}</span>
+          <div key={i} style={{
+            padding: "10px 16px", background: C.s1, borderRadius: 10, border: `1px solid ${C.border}`,
+            display: "flex", alignItems: "center", gap: 12,
+          }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: acc.currency === "EUR" ? C.green : C.blue }} />
+            <span style={{ color: C.muted, fontSize: 13 }}>{acc.name}</span>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{fmtAmt(acc.balance, acc.currency)}</span>
           </div>
         ))}
       </div>
 
-      {/* Charts row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+      {/* Charts Row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20 }}>
         {/* Donut */}
-        <div style={{ background: C.surface, borderRadius: 12, padding: 20 }}>
-          <div style={{ fontSize: 10, color: C.muted, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.05em" }}>Spending Breakdown</div>
-          {donutTotal === 0 ? <div style={{ color: C.muted }}>No spending this month</div> : (
-            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <GlassCard>
+          <div style={{ fontSize: 10, color: C.muted, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>Spending Breakdown</div>
+          {donutTotal === 0 ? <div style={{ color: C.muted, padding: 20, textAlign: "center" }}>No spending this month</div> : (
+            <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
               <svg width={140} height={140}>
                 {(() => {
                   let cumAngle = -Math.PI / 2;
@@ -314,394 +315,288 @@ function OverviewView({ data }) {
                     const xi2 = cx + inner * Math.cos(cumAngle), yi2 = cy + inner * Math.sin(cumAngle);
                     const large = angle > Math.PI ? 1 : 0;
                     const d = `M${xi1},${yi1} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} L${xi2},${yi2} A${inner},${inner} 0 ${large},0 ${xi1},${yi1} Z`;
-                    return <path key={i} d={d} fill={getCatColor(cat, data.categories)} opacity={0.85} />;
+                    return <path key={i} d={d} fill={getCatColor(cat, data.categories)} opacity={0.9} />;
                   });
                 })()}
               </svg>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                {donutData.slice(0, 5).map((d, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: 2, background: getCatColor(d.cat, data.categories) }} />
-                    <span style={{ color: C.muted }}>{d.cat}</span>
-                    <span style={{ marginLeft: "auto" }}>{((d.value / donutTotal) * 100).toFixed(0)}%</span>
+              <div style={{ flex: 1 }}>
+                {donutData.slice(0, 5).map(({ cat, value }) => (
+                  <div key={cat} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: 3, background: getCatColor(cat, data.categories) }} />
+                    <span style={{ fontSize: 12, color: C.muted, flex: 1 }}>{cat}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600 }}>{fmtEUR(value)}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
+        </GlassCard>
 
         {/* Trend */}
-        <div style={{ background: C.surface, borderRadius: 12, padding: 20 }}>
-          <div style={{ fontSize: 10, color: C.muted, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.05em" }}>6 Month Trend</div>
-          <div style={{ display: "flex", alignItems: "flex-end", height: 100, gap: 6 }}>
-            {trendData.map((t, i) => (
-              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                <div style={{ width: "40%", height: `${(t.income / trendMax) * 100}%`, minHeight: 2, background: C.green, borderRadius: 2, opacity: 0.7 }} />
-                <div style={{ width: "40%", height: `${(t.expenses / trendMax) * 100}%`, minHeight: 2, background: C.red, borderRadius: 2, opacity: 0.7 }} />
+        <GlassCard>
+          <div style={{ fontSize: 10, color: C.muted, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>6 Month Trend</div>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 120 }}>
+            {trendData.map((m, i) => (
+              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <div style={{ width: "100%", height: 100, display: "flex", alignItems: "flex-end", gap: 3 }}>
+                  <div style={{ flex: 1, borderRadius: "4px 4px 0 0", background: C.green, height: `${Math.max(4, (m.income / trendMax) * 100)}%`, transition: "height 0.5s ease" }} />
+                  <div style={{ flex: 1, borderRadius: "4px 4px 0 0", background: C.red, height: `${Math.max(4, (m.expenses / trendMax) * 100)}%`, transition: "height 0.5s ease" }} />
+                </div>
+                <div style={{ fontSize: 10, color: C.muted }}>{m.label}</div>
               </div>
             ))}
           </div>
-          <div style={{ display: "flex", marginTop: 8 }}>
-            {trendData.map((t, i) => <div key={i} style={{ flex: 1, textAlign: "center", fontSize: 9, color: C.muted }}>{t.label}</div>)}
-          </div>
-          <div style={{ display: "flex", gap: 16, justifyContent: "center", marginTop: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10 }}><div style={{ width: 8, height: 8, borderRadius: 2, background: C.green }} /><span style={{ color: C.muted }}>Income</span></div>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10 }}><div style={{ width: 8, height: 8, borderRadius: 2, background: C.red }} /><span style={{ color: C.muted }}>Expenses</span></div>
-          </div>
-        </div>
+        </GlassCard>
 
         {/* Upcoming */}
-        <div style={{ background: C.surface, borderRadius: 12, padding: 20 }}>
-          <div style={{ fontSize: 10, color: C.muted, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.05em" }}>Upcoming Bills</div>
-          {upcoming.length === 0 ? <div style={{ color: C.muted }}>No upcoming bills</div> : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <GlassCard>
+          <div style={{ fontSize: 10, color: C.muted, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>Upcoming</div>
+          {upcoming.length === 0 ? <div style={{ color: C.muted, padding: 20, textAlign: "center" }}>Nothing upcoming</div> : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {upcoming.map((b, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
-                  <span style={{ color: C.muted, width: 50 }}>{fmtDate(b.date)?.slice(0, 6)}</span>
-                  <span style={{ flex: 1 }}>{b.name}</span>
-                  <span style={{ color: C.red, fontWeight: 500 }}>{fmtAmt(b.amount, b.currency)}</span>
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: i < upcoming.length - 1 ? `1px solid ${C.border}` : "none" }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: b.type === "sub" ? `${C.orange}15` : `${C.red}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>
+                    {b.type === "sub" ? "🔄" : "💳"}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>{b.name}</div>
+                    <div style={{ fontSize: 11, color: C.muted }}>{fmtDate(b.date)}</div>
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: b.type === "sub" ? C.orange : C.red }}>{fmtAmt(b.amount, b.currency)}</div>
                 </div>
               ))}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Recent transactions */}
-      <div style={{ background: C.surface, borderRadius: 12, padding: 20 }}>
-        <div style={{ fontSize: 10, color: C.muted, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.05em" }}>Recent Transactions</div>
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Type</th>
-              <th>Category</th>
-              <th style={{ textAlign: "right" }}>Amount</th>
-              <th>Account</th>
-              <th>Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            {txs.slice(0, 10).map(tx => (
-              <tr key={tx.id}>
-                <td>{tx.date}</td>
-                <td><span style={{ color: tx.type === "income" ? C.green : C.red }}>{tx.type === "income" ? "IN" : "OUT"}</span></td>
-                <td><span style={{ color: getCatColor(tx.category, data.categories) }}>{tx.category}</span></td>
-                <td style={{ textAlign: "right", fontWeight: 600, color: tx.type === "income" ? C.green : C.red }}>{fmtAmt(tx.amount, tx.currency)}</td>
-                <td style={{ color: C.muted }}>{tx.accountName}</td>
-                <td style={{ color: C.muted }}>{tx.note || "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        </GlassCard>
       </div>
     </div>
   );
 }
 
-// ── Transactions View ───────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// TRANSACTIONS VIEW
+// ══════════════════════════════════════════════════════════════════════════════
 function TransactionsView({ data, upd }) {
-  const [selected, setSelected] = useState([]);
-  const [filters, setFilters] = useState({});
-  const [editTx, setEditTx] = useState(null);
+  const [filter, setFilter] = useState({ type: "", currency: "", month: "" });
+  const [search, setSearch] = useState("");
 
-  const categories = [...new Set((data.transactions || []).map(t => t.category))].filter(Boolean).sort();
-  const accounts = [...new Set((data.transactions || []).map(t => t.accountName))].filter(Boolean).sort();
-  const months = [...new Set((data.transactions || []).map(t => getMonthKey(t.date)))].filter(Boolean).sort().reverse();
+  const txs = data.transactions || [];
+  const months = [...new Set(txs.map(t => getMonthKey(t.date)))].filter(Boolean).sort().reverse();
 
-  const filtered = useMemo(() => {
-    return (data.transactions || []).filter(t => {
-      if (filters.type && t.type !== filters.type) return false;
-      if (filters.category && t.category !== filters.category) return false;
-      if (filters.account && t.accountName !== filters.account) return false;
-      if (filters.month && getMonthKey(t.date) !== filters.month) return false;
-      if (filters.currency && t.currency !== filters.currency) return false;
-      return true;
-    });
-  }, [data.transactions, filters]);
+  const filtered = txs.filter(t => {
+    if (filter.type && t.type !== filter.type) return false;
+    if (filter.currency && t.currency !== filter.currency) return false;
+    if (filter.month && !t.date?.startsWith(filter.month)) return false;
+    if (search && !t.note?.toLowerCase().includes(search.toLowerCase()) && !t.category?.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
 
   const columns = [
-    { key: "date", label: "Date", render: v => v },
-    { key: "type", label: "Type", render: v => <span style={{ color: v === "income" ? C.green : C.red }}>{v === "income" ? "IN" : "OUT"}</span> },
-    { key: "category", label: "Category", render: (v, row) => <span style={{ color: getCatColor(v, data.categories) }}>{v}</span> },
-    { key: "amount", label: "Amount", style: { textAlign: "right", fontWeight: 600 }, render: (v, row) => <span style={{ color: row.type === "income" ? C.green : C.red }}>{fmtAmt(v, row.currency)}</span> },
-    { key: "accountName", label: "Account" },
+    { key: "date", label: "Date", render: v => fmtDate(v) },
+    { key: "type", label: "Type", render: (v, row) => (
+      <span style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+        background: v === "income" ? `${C.green}15` : `${C.red}15`,
+        color: v === "income" ? C.green : C.red,
+      }}>{v === "income" ? "IN" : "OUT"}</span>
+    )},
+    { key: "category", label: "Category", render: (v, row) => (
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ width: 8, height: 8, borderRadius: 2, background: getCatColor(v, data.categories) }} />
+        {v}
+      </div>
+    )},
     { key: "note", label: "Note", render: v => v || "—" },
+    { key: "accountName", label: "Account" },
+    { key: "amount", label: "Amount", style: { textAlign: "right" }, render: (v, row) => (
+      <span style={{ fontWeight: 600, color: row.type === "income" ? C.green : C.red }}>
+        {row.type === "income" ? "+" : "−"}{fmtAmt(v, row.currency)}
+      </span>
+    )},
   ];
 
-  const bulkDelete = () => {
-    if (!confirm(`Delete ${selected.length} transactions?`)) return;
-    const txs = (data.transactions || []).filter(t => !selected.includes(t.id));
-    upd("transactions", txs);
-    setSelected([]);
-  };
-
-  const bulkRecategorize = () => {
-    const newCat = prompt("New category:");
-    if (!newCat) return;
-    const txs = (data.transactions || []).map(t => selected.includes(t.id) ? { ...t, category: newCat } : t);
-    upd("transactions", txs);
-    setSelected([]);
-  };
-
-  const exportCSV = () => {
-    const headers = ["Date", "Type", "Category", "Amount", "Currency", "Account", "Note"];
-    const rows = filtered.map(t => [t.date, t.type, t.category, t.amount, t.currency, t.accountName, t.note || ""]);
-    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `vault-transactions-${todayStr()}.csv`;
-    a.click();
-  };
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-        <FilterBar
-          filters={[
-            { key: "type", label: "Type", options: ["expense", "income"] },
-            { key: "category", label: "Category", options: categories },
-            { key: "account", label: "Account", options: accounts },
-            { key: "month", label: "Month", options: months },
-            { key: "currency", label: "Currency", options: ["EUR", "IDR"] },
-          ]}
-          values={filters}
-          onChange={setFilters}
-        />
-        <div style={{ display: "flex", gap: 8 }}>
-          {selected.length > 0 && (
-            <>
-              <button onClick={bulkRecategorize} style={{ padding: "6px 12px", borderRadius: 6, border: `1px solid ${C.border}`, background: "transparent", color: C.fg, cursor: "pointer" }}>
-                Recategorize ({selected.length})
-              </button>
-              <button onClick={bulkDelete} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: C.red, color: "#000", cursor: "pointer" }}>
-                Delete ({selected.length})
-              </button>
-            </>
-          )}
-          <button onClick={exportCSV} style={{ padding: "6px 12px", borderRadius: 6, border: `1px solid ${C.border}`, background: "transparent", color: C.muted, cursor: "pointer" }}>
-            Export CSV
-          </button>
-        </div>
+    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Filters */}
+      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)}
+          style={{ ...inputStyle, width: 200 }} />
+        <select value={filter.type} onChange={e => setFilter(f => ({ ...f, type: e.target.value }))} style={{ ...inputStyle, width: 120 }}>
+          <option value="">All Types</option>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+        </select>
+        <select value={filter.currency} onChange={e => setFilter(f => ({ ...f, currency: e.target.value }))} style={{ ...inputStyle, width: 100 }}>
+          <option value="">All Currencies</option>
+          <option value="EUR">EUR</option>
+          <option value="IDR">IDR</option>
+        </select>
+        <select value={filter.month} onChange={e => setFilter(f => ({ ...f, month: e.target.value }))} style={{ ...inputStyle, width: 140 }}>
+          <option value="">All Months</option>
+          {months.map(m => <option key={m} value={m}>{getMonthName(m)}</option>)}
+        </select>
+        <div style={{ flex: 1 }} />
+        <span style={{ fontSize: 12, color: C.muted }}>{filtered.length} transactions</span>
       </div>
 
-      <div style={{ fontSize: 11, color: C.muted }}>{filtered.length} transactions</div>
-
-      <DataTable
-        columns={columns}
-        data={filtered}
-        selectedIds={selected}
-        onSelect={setSelected}
-        onRowClick={setEditTx}
-      />
+      <DataTable columns={columns} data={filtered} />
     </div>
   );
 }
 
-// ── Monthly View ────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// MONTHLY VIEW
+// ══════════════════════════════════════════════════════════════════════════════
 function MonthlyView({ data }) {
-  const txs = (data.transactions || []).filter(t => !t.pending && t.currency === "EUR");
-  
-  const allMonths = [...new Set(txs.map(t => getMonthKey(t.date)))].filter(Boolean).sort().reverse().slice(0, 12);
-  const categories = [...new Set(txs.filter(t => t.type === "expense").map(t => t.category))].filter(Boolean).sort();
+  const txs = data.transactions || [];
+  const categories = [...new Set(txs.filter(t => t.type === "expense").map(t => t.category))].sort();
+  const months = [...new Set(txs.map(t => getMonthKey(t.date)))].filter(Boolean).sort().reverse().slice(0, 6).reverse();
 
-  const getSum = (cat, month) => {
-    return txs.filter(t => t.type === "expense" && t.category === cat && (month === "total" || getMonthKey(t.date) === month))
-      .reduce((s, t) => s + t.amount, 0);
-  };
-
-  const getMonthTotal = (month, type) => {
-    return txs.filter(t => t.type === type && (month === "total" || getMonthKey(t.date) === month))
-      .reduce((s, t) => s + t.amount, 0);
+  const getCatMonthTotal = (cat, month) => {
+    if (month === "total") {
+      return txs.filter(t => t.type === "expense" && t.category === cat && t.currency === "EUR").reduce((s, t) => s + t.amount, 0);
+    }
+    return txs.filter(t => t.type === "expense" && t.category === cat && t.date?.startsWith(month) && t.currency === "EUR").reduce((s, t) => s + t.amount, 0);
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      {/* Summary row */}
-      <div style={{ overflow: "auto", background: C.surface, borderRadius: 8 }}>
+    <div className="fade-in">
+      <div style={{ overflow: "auto", background: C.s1, borderRadius: 14 }}>
         <table>
           <thead>
             <tr>
-              <th style={{ minWidth: 120 }}></th>
-              {allMonths.map(m => <th key={m} style={{ minWidth: 100, textAlign: "right" }}>{getMonthName(m)}</th>)}
+              <th style={{ minWidth: 140 }}>Category</th>
+              {months.map(m => <th key={m} style={{ minWidth: 110, textAlign: "right" }}>{getMonthName(m)}</th>)}
+              <th style={{ minWidth: 110, textAlign: "right", color: C.acc }}>Total</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td style={{ fontWeight: 500, color: C.green }}>Income</td>
-              {allMonths.map(m => <td key={m} style={{ textAlign: "right", color: C.green }}>{fmtEUR(getMonthTotal(m, "income"))}</td>)}
-            </tr>
-            <tr>
-              <td style={{ fontWeight: 500, color: C.red }}>Expenses</td>
-              {allMonths.map(m => <td key={m} style={{ textAlign: "right", color: C.red }}>{fmtEUR(getMonthTotal(m, "expense"))}</td>)}
-            </tr>
-            <tr style={{ borderTop: `2px solid ${C.border}` }}>
-              <td style={{ fontWeight: 600 }}>Net</td>
-              {allMonths.map(m => {
-                const net = getMonthTotal(m, "income") - getMonthTotal(m, "expense");
-                return <td key={m} style={{ textAlign: "right", fontWeight: 600, color: net >= 0 ? C.green : C.red }}>{fmtEUR(net)}</td>;
+            {categories.map(cat => (
+              <tr key={cat}>
+                <td>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: 3, background: getCatColor(cat, data.categories) }} />
+                    {cat}
+                  </div>
+                </td>
+                {months.map(m => {
+                  const val = getCatMonthTotal(cat, m);
+                  return <td key={m} style={{ textAlign: "right", color: val > 0 ? C.fg : C.dim }}>{val > 0 ? fmtEUR(val) : "—"}</td>;
+                })}
+                <td style={{ textAlign: "right", fontWeight: 600, color: C.acc }}>{fmtEUR(getCatMonthTotal(cat, "total"))}</td>
+              </tr>
+            ))}
+            <tr style={{ borderTop: `2px solid ${C.border2}` }}>
+              <td style={{ fontWeight: 600 }}>Total</td>
+              {months.map(m => {
+                const total = categories.reduce((s, cat) => s + getCatMonthTotal(cat, m), 0);
+                return <td key={m} style={{ textAlign: "right", fontWeight: 600 }}>{fmtEUR(total)}</td>;
               })}
+              <td style={{ textAlign: "right", fontWeight: 700, color: C.acc }}>{fmtEUR(categories.reduce((s, cat) => s + getCatMonthTotal(cat, "total"), 0))}</td>
             </tr>
           </tbody>
         </table>
       </div>
-
-      {/* Category breakdown */}
-      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Expenses by Category</div>
-      <MonthlyGrid
-        months={allMonths}
-        rowLabels={categories}
-        renderCell={(cat, month) => {
-          const val = getSum(cat, month);
-          return val > 0 ? <span style={{ color: C.fg }}>{fmtEUR(val)}</span> : <span style={{ color: C.dim }}>—</span>;
-        }}
-      />
     </div>
   );
 }
 
-// ── Accounts View ───────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// ACCOUNTS VIEW
+// ══════════════════════════════════════════════════════════════════════════════
 function AccountsView({ data, upd }) {
   const [showModal, setShowModal] = useState(false);
   const [editAcc, setEditAcc] = useState(null);
-  const [formName, setFormName] = useState("");
-  const [formBalance, setFormBalance] = useState("");
-  const [formCurrency, setFormCurrency] = useState("EUR");
+  const [form, setForm] = useState({ name: "", balance: "", currency: "EUR", rate: "", note: "" });
 
   const allAccounts = [
     ...(data.eurAccounts || []).map(a => ({ ...a, currency: "EUR" })),
     ...(data.idrAccounts || []).map(a => ({ ...a, currency: "IDR" })),
   ];
 
-  const pockets = data.goals || [];
-
-  const eurTotal = (data.eurAccounts || []).reduce((s, a) => s + (a.balance || 0), 0);
-  const idrTotal = (data.idrAccounts || []).reduce((s, a) => s + (a.balance || 0), 0);
-
-  const openAdd = () => {
-    setEditAcc(null);
-    setFormName("");
-    setFormBalance("");
-    setFormCurrency("EUR");
+  const openEdit = (acc) => {
+    setEditAcc(acc);
+    setForm({ name: acc.name, balance: acc.balance, currency: acc.currency, rate: acc.rate || "", note: acc.note || "" });
     setShowModal(true);
   };
 
-  const openEdit = (acc) => {
-    setEditAcc(acc);
-    setFormName(acc.name);
-    setFormBalance(acc.balance?.toString() || "0");
-    setFormCurrency(acc.currency);
+  const openNew = () => {
+    setEditAcc(null);
+    setForm({ name: "", balance: "", currency: "EUR", rate: "", note: "" });
     setShowModal(true);
   };
 
   const save = () => {
-    if (!formName.trim()) return;
-    const acc = { id: editAcc?.id || Date.now(), name: formName.trim(), balance: parseFloat(formBalance) || 0 };
-    const key = formCurrency === "EUR" ? "eurAccounts" : "idrAccounts";
-    const accs = data[key] || [];
-
+    if (!form.name) return;
+    const acc = { id: editAcc?.id || Date.now(), name: form.name, balance: parseFloat(form.balance) || 0, rate: parseFloat(form.rate) || 0, note: form.note };
+    const key = form.currency === "EUR" ? "eurAccounts" : "idrAccounts";
     if (editAcc) {
-      if (editAcc.currency !== formCurrency) {
-        const oldKey = editAcc.currency === "EUR" ? "eurAccounts" : "idrAccounts";
-        upd(oldKey, (data[oldKey] || []).filter(a => a.id !== editAcc.id));
-        upd(key, [...accs, acc]);
+      const oldKey = editAcc.currency === "EUR" ? "eurAccounts" : "idrAccounts";
+      if (oldKey === key) {
+        upd(key, (data[key] || []).map(a => a.id === editAcc.id ? acc : a));
       } else {
-        upd(key, accs.map(a => a.id === editAcc.id ? acc : a));
+        upd(oldKey, (data[oldKey] || []).filter(a => a.id !== editAcc.id));
+        upd(key, [...(data[key] || []), acc]);
       }
     } else {
-      upd(key, [...accs, acc]);
+      upd(key, [...(data[key] || []), acc]);
     }
     setShowModal(false);
   };
 
-  const deleteAcc = () => {
-    if (!confirm(`Delete ${editAcc.name}?`)) return;
+  const del = () => {
+    if (!editAcc) return;
     const key = editAcc.currency === "EUR" ? "eurAccounts" : "idrAccounts";
     upd(key, (data[key] || []).filter(a => a.id !== editAcc.id));
     setShowModal(false);
   };
 
   const columns = [
-    { key: "name", label: "Account", style: { fontWeight: 500 } },
-    { key: "currency", label: "Currency", render: v => <span style={{ color: v === "EUR" ? C.green : C.blue }}>{v}</span> },
-    { key: "balance", label: "Balance", style: { textAlign: "right", fontWeight: 600 }, render: (v, row) => fmtAmt(v, row.currency) },
-    { key: "actions", label: "", style: { width: 60 }, render: (_, row) => (
-      <button onClick={(e) => { e.stopPropagation(); openEdit(row); }} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 11 }}>Edit</button>
+    { key: "name", label: "Account Name", render: (v, row) => (
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 10, height: 10, borderRadius: "50%", background: row.currency === "EUR" ? C.green : C.blue }} />
+        <span style={{ fontWeight: 500 }}>{v}</span>
+      </div>
     )},
-  ];
-
-  const pocketColumns = [
-    { key: "emoji", label: "", style: { width: 32 } },
-    { key: "name", label: "Pocket", style: { fontWeight: 500 } },
-    { key: "type", label: "Type", render: v => <span style={{ color: v === "spending" ? C.amber : C.acc }}>{v}</span> },
-    { key: "saved", label: "Saved", style: { textAlign: "right" }, render: (v, row) => fmtEUR(v) },
-    { key: "goal", label: "Goal", style: { textAlign: "right" }, render: (v, row) => v > 0 ? fmtEUR(v) : "—" },
-    { key: "progress", label: "Progress", style: { width: 120 }, render: (_, row) => {
-      if (!row.goal) return "—";
-      const pct = Math.min((row.saved / row.goal) * 100, 100);
-      return (
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ flex: 1, height: 4, background: C.border, borderRadius: 2 }}>
-            <div style={{ width: `${pct}%`, height: "100%", background: row.type === "spending" ? C.amber : C.acc, borderRadius: 2 }} />
-          </div>
-          <span style={{ fontSize: 11, color: C.muted }}>{pct.toFixed(0)}%</span>
-        </div>
-      );
-    }},
+    { key: "currency", label: "Currency", render: v => (
+      <span style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+        background: v === "EUR" ? `${C.green}15` : `${C.blue}15`,
+        color: v === "EUR" ? C.green : C.blue,
+      }}>{v}</span>
+    )},
+    { key: "balance", label: "Balance", style: { textAlign: "right" }, render: (v, row) => (
+      <span style={{ fontWeight: 600 }}>{fmtAmt(v, row.currency)}</span>
+    )},
+    { key: "rate", label: "Interest", style: { textAlign: "right" }, render: v => v ? `${v}%` : "—" },
+    { key: "note", label: "Note", render: v => v || "—" },
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", gap: 12 }}>
-          <StatBox label="EUR Total" value={fmtEUR(eurTotal)} color={C.green} />
-          <StatBox label="IDR Total" value={fmtIDR(idrTotal)} color={C.blue} />
-        </div>
-        <Btn onClick={openAdd}>+ Add Account</Btn>
+        <span style={{ fontSize: 12, color: C.muted }}>{allAccounts.length} accounts</span>
+        <Btn onClick={openNew}>+ Add Account</Btn>
       </div>
 
-      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Accounts</div>
-      <DataTable columns={columns} data={allAccounts} sortable={false} />
+      <DataTable columns={columns} data={allAccounts} onRowClick={openEdit} />
 
-      {pockets.length > 0 && (
-        <>
-          <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Pockets</div>
-          <DataTable columns={pocketColumns} data={pockets} sortable={false} />
-        </>
-      )}
-
-      <Modal show={showModal} onClose={() => setShowModal(false)} title={editAcc ? "Edit Account" : "Add Account"}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>CURRENCY</div>
-            <div style={{ display: "flex", gap: 6 }}>
-              {["EUR", "IDR"].map(c => (
-                <button key={c} onClick={() => setFormCurrency(c)} style={{
-                  flex: 1, padding: "8px", borderRadius: 6,
-                  border: `1px solid ${formCurrency === c ? C.amber : C.border}`,
-                  background: formCurrency === c ? "rgba(249,202,36,0.1)" : "transparent",
-                  color: formCurrency === c ? C.amber : C.muted,
-                  fontSize: 12, cursor: "pointer",
-                }}>{c}</button>
-              ))}
-            </div>
+      <Modal show={showModal} onClose={() => setShowModal(false)} title={editAcc ? "Edit Account" : "New Account"}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            {["EUR", "IDR"].map(c => (
+              <PillBtn key={c} active={form.currency === c} onClick={() => setForm(f => ({ ...f, currency: c }))}>{c}</PillBtn>
+            ))}
           </div>
-          <div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>NAME</div>
-            <input value={formName} onChange={e => setFormName(e.target.value)} placeholder="Account name" style={inputStyle} />
+          <Field label="Name"><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Account name" style={inputStyle} /></Field>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <Field label="Balance"><input type="number" value={form.balance} onChange={e => setForm(f => ({ ...f, balance: e.target.value }))} placeholder="0" style={inputStyle} /></Field>
+            <Field label="Interest %"><input type="number" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} placeholder="optional" style={inputStyle} /></Field>
           </div>
-          <div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>BALANCE</div>
-            <input type="number" value={formBalance} onChange={e => setFormBalance(e.target.value)} placeholder="0" style={inputStyle} />
-          </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            {editAcc && <Btn onClick={deleteAcc} danger>Delete</Btn>}
+          <Field label="Note"><input value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="optional" style={inputStyle} /></Field>
+          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+            {editAcc && <Btn onClick={del} danger>Delete</Btn>}
             <div style={{ flex: 1 }} />
             <Btn onClick={() => setShowModal(false)} secondary>Cancel</Btn>
-            <Btn onClick={save} disabled={!formName.trim()}>Save</Btn>
+            <Btn onClick={save} disabled={!form.name}>Save</Btn>
           </div>
         </div>
       </Modal>
@@ -709,255 +604,189 @@ function AccountsView({ data, upd }) {
   );
 }
 
-// ── Debts & Subs View ───────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// DEBTS & SUBS VIEW
+// ══════════════════════════════════════════════════════════════════════════════
 function DebtsSubsView({ data, upd }) {
   const [showDebtModal, setShowDebtModal] = useState(false);
   const [showSubModal, setShowSubModal] = useState(false);
   const [editDebt, setEditDebt] = useState(null);
   const [editSub, setEditSub] = useState(null);
-  
-  // Debt form
-  const [debtName, setDebtName] = useState("");
-  const [debtTotal, setDebtTotal] = useState("");
-  const [debtRemaining, setDebtRemaining] = useState("");
-  const [debtMonthly, setDebtMonthly] = useState("");
-  const [debtCurrency, setDebtCurrency] = useState("EUR");
-
-  // Sub form
-  const [subName, setSubName] = useState("");
-  const [subAmount, setSubAmount] = useState("");
-  const [subCurrency, setSubCurrency] = useState("EUR");
-  const [subRenewal, setSubRenewal] = useState("Monthly");
-  const [subNextDate, setSubNextDate] = useState(todayStr());
+  const [debtForm, setDebtForm] = useState({ name: "", total: "", remaining: "", monthly: "", currency: "EUR" });
+  const [subForm, setSubForm] = useState({ name: "", amount: "", renewal: "Monthly", currency: "EUR", nextDate: todayStr() });
 
   const debts = data.debts || [];
   const subs = data.subscriptions || [];
 
-  const eurDebt = debts.filter(d => d.currency === "EUR").reduce((s, d) => s + (d.remaining || 0), 0);
-  const eurSubsMonthly = subs.filter(s => s.currency === "EUR" && s.renewal === "Monthly").reduce((s, sub) => s + sub.amount, 0);
+  const eurDebtTotal = debts.filter(d => d.currency === "EUR").reduce((s, d) => s + (d.remaining || 0), 0);
+  const subMonthlyEUR = subs.filter(s => s.currency === "EUR").reduce((s, sub) => {
+    if (sub.renewal === "Monthly") return s + sub.amount;
+    if (sub.renewal === "Yearly") return s + sub.amount / 12;
+    if (sub.renewal === "Weekly") return s + sub.amount * 4.33;
+    if (sub.renewal === "Quarterly") return s + sub.amount / 3;
+    return s;
+  }, 0);
 
   // Debt handlers
-  const openAddDebt = () => {
-    setEditDebt(null);
-    setDebtName(""); setDebtTotal(""); setDebtRemaining(""); setDebtMonthly(""); setDebtCurrency("EUR");
-    setShowDebtModal(true);
-  };
-
-  const openEditDebt = (d) => {
+  const openDebt = (d) => {
     setEditDebt(d);
-    setDebtName(d.name); setDebtTotal(d.total?.toString() || ""); 
-    setDebtRemaining(d.remaining?.toString() || ""); setDebtMonthly(d.monthly?.toString() || "");
-    setDebtCurrency(d.currency || "EUR");
+    setDebtForm({ name: d.name, total: d.total, remaining: d.remaining, monthly: d.monthly || "", currency: d.currency });
     setShowDebtModal(true);
   };
-
+  const openNewDebt = () => {
+    setEditDebt(null);
+    setDebtForm({ name: "", total: "", remaining: "", monthly: "", currency: "EUR" });
+    setShowDebtModal(true);
+  };
   const saveDebt = () => {
-    if (!debtName.trim() || !debtTotal) return;
-    const debt = {
-      id: editDebt?.id || Date.now(),
-      name: debtName.trim(),
-      total: parseFloat(debtTotal) || 0,
-      remaining: parseFloat(debtRemaining) || parseFloat(debtTotal) || 0,
-      monthly: parseFloat(debtMonthly) || 0,
-      currency: debtCurrency,
-    };
-    if (editDebt) {
-      upd("debts", debts.map(d => d.id === editDebt.id ? debt : d));
-    } else {
-      upd("debts", [...debts, debt]);
-    }
+    if (!debtForm.name || !debtForm.total) return;
+    const d = { id: editDebt?.id || Date.now(), ...debtForm, total: parseFloat(debtForm.total) || 0, remaining: parseFloat(debtForm.remaining) || parseFloat(debtForm.total) || 0, monthly: parseFloat(debtForm.monthly) || 0 };
+    if (editDebt) upd("debts", debts.map(x => x.id === editDebt.id ? d : x));
+    else upd("debts", [...debts, d]);
     setShowDebtModal(false);
   };
-
-  const deleteDebt = () => {
-    if (!confirm(`Delete ${editDebt.name}?`)) return;
-    upd("debts", debts.filter(d => d.id !== editDebt.id));
+  const delDebt = () => {
+    if (editDebt) upd("debts", debts.filter(d => d.id !== editDebt.id));
     setShowDebtModal(false);
   };
 
   // Sub handlers
-  const openAddSub = () => {
-    setEditSub(null);
-    setSubName(""); setSubAmount(""); setSubCurrency("EUR"); setSubRenewal("Monthly"); setSubNextDate(todayStr());
-    setShowSubModal(true);
-  };
-
-  const openEditSub = (s) => {
+  const openSub = (s) => {
     setEditSub(s);
-    setSubName(s.name); setSubAmount(s.amount?.toString() || "");
-    setSubCurrency(s.currency || "EUR"); setSubRenewal(s.renewal || "Monthly");
-    setSubNextDate(s.nextDate || todayStr());
+    setSubForm({ name: s.name, amount: s.amount, renewal: s.renewal, currency: s.currency, nextDate: s.nextDate || todayStr() });
     setShowSubModal(true);
   };
-
+  const openNewSub = () => {
+    setEditSub(null);
+    setSubForm({ name: "", amount: "", renewal: "Monthly", currency: "EUR", nextDate: todayStr() });
+    setShowSubModal(true);
+  };
   const saveSub = () => {
-    if (!subName.trim() || !subAmount) return;
-    const sub = {
-      id: editSub?.id || Date.now(),
-      name: subName.trim(),
-      amount: parseFloat(subAmount) || 0,
-      currency: subCurrency,
-      renewal: subRenewal,
-      nextDate: subNextDate,
-    };
-    if (editSub) {
-      upd("subscriptions", subs.map(s => s.id === editSub.id ? sub : s));
-    } else {
-      upd("subscriptions", [...subs, sub]);
-    }
+    if (!subForm.name || !subForm.amount) return;
+    const s = { id: editSub?.id || Date.now(), ...subForm, amount: parseFloat(subForm.amount) || 0 };
+    if (editSub) upd("subscriptions", subs.map(x => x.id === editSub.id ? s : x));
+    else upd("subscriptions", [...subs, s]);
     setShowSubModal(false);
   };
-
-  const deleteSub = () => {
-    if (!confirm(`Delete ${editSub.name}?`)) return;
-    upd("subscriptions", subs.filter(s => s.id !== editSub.id));
+  const delSub = () => {
+    if (editSub) upd("subscriptions", subs.filter(s => s.id !== editSub.id));
     setShowSubModal(false);
   };
-
-  const debtColumns = [
-    { key: "name", label: "Debt", style: { fontWeight: 500 } },
-    { key: "currency", label: "Cur", render: v => <span style={{ color: v === "EUR" ? C.green : C.blue }}>{v}</span> },
-    { key: "total", label: "Total", style: { textAlign: "right" }, render: (v, row) => fmtAmt(v, row.currency) },
-    { key: "remaining", label: "Remaining", style: { textAlign: "right" }, render: (v, row) => <span style={{ color: C.red }}>{fmtAmt(v, row.currency)}</span> },
-    { key: "monthly", label: "Monthly", style: { textAlign: "right" }, render: (v, row) => fmtAmt(v, row.currency) },
-    { key: "progress", label: "Paid", style: { width: 100 }, render: (_, row) => {
-      const pct = row.total > 0 ? ((row.total - row.remaining) / row.total) * 100 : 0;
-      return (
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ flex: 1, height: 4, background: C.border, borderRadius: 2 }}>
-            <div style={{ width: `${pct}%`, height: "100%", background: C.acc, borderRadius: 2 }} />
-          </div>
-          <span style={{ fontSize: 10, color: C.muted }}>{pct.toFixed(0)}%</span>
-        </div>
-      );
-    }},
-    { key: "actions", label: "", style: { width: 50 }, render: (_, row) => (
-      <button onClick={(e) => { e.stopPropagation(); openEditDebt(row); }} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 11 }}>Edit</button>
-    )},
-  ];
-
-  const subColumns = [
-    { key: "name", label: "Subscription", style: { fontWeight: 500 } },
-    { key: "currency", label: "Cur", render: v => <span style={{ color: v === "EUR" ? C.green : C.blue }}>{v}</span> },
-    { key: "amount", label: "Amount", style: { textAlign: "right" }, render: (v, row) => <span style={{ color: C.pink }}>{fmtAmt(v, row.currency)}</span> },
-    { key: "renewal", label: "Renewal" },
-    { key: "nextDate", label: "Next Date", render: v => fmtDate(v) },
-    { key: "actions", label: "", style: { width: 50 }, render: (_, row) => (
-      <button onClick={(e) => { e.stopPropagation(); openEditSub(row); }} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 11 }}>Edit</button>
-    )},
-  ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div style={{ display: "flex", gap: 12 }}>
-        <StatBox label="Total Debt" value={fmtEUR(eurDebt)} color={C.red} />
-        <StatBox label="Monthly Subs" value={fmtEUR(eurSubsMonthly)} color={C.pink} />
+    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+      {/* Summary */}
+      <div style={{ display: "flex", gap: 16 }}>
+        <StatBox label="Total Debt" value={fmtEUR(eurDebtTotal)} color={eurDebtTotal > 0 ? C.red : C.green} />
+        <StatBox label="Monthly Subs" value={fmtEUR(subMonthlyEUR)} color={C.orange} />
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Debts</div>
-        <Btn onClick={openAddDebt}>+ Add Debt</Btn>
+      {/* Debts Section */}
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>Debts</div>
+          <Btn onClick={openNewDebt} color={C.red}>+ Add Debt</Btn>
+        </div>
+        {debts.length === 0 ? (
+          <GlassCard style={{ textAlign: "center", padding: 32 }}>
+            <div style={{ fontSize: 13, color: C.muted }}>No debts — you're debt free! 🎉</div>
+          </GlassCard>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {debts.map(d => {
+              const pct = d.total > 0 ? ((d.total - d.remaining) / d.total) * 100 : 0;
+              return (
+                <GlassCard key={d.id} style={{ padding: 16, cursor: "pointer" }} onClick={() => openDebt(d)}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{d.name}</div>
+                      <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{pct.toFixed(0)}% paid off</div>
+                    </div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: C.red }}>{fmtAmt(d.remaining, d.currency)}</div>
+                  </div>
+                  <div style={{ height: 6, background: C.border, borderRadius: 3, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${pct}%`, background: C.green, borderRadius: 3, transition: "width 0.5s ease" }} />
+                  </div>
+                  {d.monthly > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 11, color: C.muted }}>
+                      <span>Monthly: {fmtAmt(d.monthly, d.currency)}</span>
+                    </div>
+                  )}
+                </GlassCard>
+              );
+            })}
+          </div>
+        )}
       </div>
-      {debts.length === 0 ? (
-        <div style={{ color: C.muted, background: C.surface, padding: 24, borderRadius: 8 }}>No debts 🎉</div>
-      ) : (
-        <DataTable columns={debtColumns} data={debts} sortable={false} />
-      )}
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Subscriptions</div>
-        <Btn onClick={openAddSub}>+ Add Subscription</Btn>
+      {/* Subs Section */}
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>Subscriptions</div>
+          <Btn onClick={openNewSub} color={C.orange}>+ Add Subscription</Btn>
+        </div>
+        {subs.length === 0 ? (
+          <GlassCard style={{ textAlign: "center", padding: 32 }}>
+            <div style={{ fontSize: 13, color: C.muted }}>No subscriptions tracked</div>
+          </GlassCard>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {subs.map(s => (
+              <GlassCard key={s.id} style={{ padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }} onClick={() => openSub(s)}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: `${C.orange}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🔄</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 500 }}>{s.name}</div>
+                  <div style={{ fontSize: 11, color: C.muted }}>{s.renewal} · {fmtDate(s.nextDate)}</div>
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: C.orange }}>{fmtAmt(s.amount, s.currency)}</div>
+              </GlassCard>
+            ))}
+          </div>
+        )}
       </div>
-      {subs.length === 0 ? (
-        <div style={{ color: C.muted, background: C.surface, padding: 24, borderRadius: 8 }}>No subscriptions</div>
-      ) : (
-        <DataTable columns={subColumns} data={subs} sortable={false} />
-      )}
 
       {/* Debt Modal */}
       <Modal show={showDebtModal} onClose={() => setShowDebtModal(false)} title={editDebt ? "Edit Debt" : "Add Debt"}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>CURRENCY</div>
-            <div style={{ display: "flex", gap: 6 }}>
-              {["EUR", "IDR"].map(c => (
-                <button key={c} onClick={() => setDebtCurrency(c)} style={{
-                  flex: 1, padding: "8px", borderRadius: 6,
-                  border: `1px solid ${debtCurrency === c ? C.amber : C.border}`,
-                  background: debtCurrency === c ? "rgba(249,202,36,0.1)" : "transparent",
-                  color: debtCurrency === c ? C.amber : C.muted, fontSize: 12, cursor: "pointer",
-                }}>{c}</button>
-              ))}
-            </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            {["EUR", "IDR"].map(c => <PillBtn key={c} active={debtForm.currency === c} onClick={() => setDebtForm(f => ({ ...f, currency: c }))}>{c}</PillBtn>)}
           </div>
-          <div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>NAME</div>
-            <input value={debtName} onChange={e => setDebtName(e.target.value)} placeholder="e.g. Car Loan" style={inputStyle} />
-          </div>
+          <Field label="Name"><input value={debtForm.name} onChange={e => setDebtForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Car loan" style={inputStyle} /></Field>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>TOTAL</div>
-              <input type="number" value={debtTotal} onChange={e => setDebtTotal(e.target.value)} placeholder="0" style={inputStyle} />
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>REMAINING</div>
-              <input type="number" value={debtRemaining} onChange={e => setDebtRemaining(e.target.value)} placeholder="0" style={inputStyle} />
-            </div>
+            <Field label="Total Amount"><input type="number" value={debtForm.total} onChange={e => setDebtForm(f => ({ ...f, total: e.target.value }))} placeholder="0" style={inputStyle} /></Field>
+            <Field label="Remaining"><input type="number" value={debtForm.remaining} onChange={e => setDebtForm(f => ({ ...f, remaining: e.target.value }))} placeholder="0" style={inputStyle} /></Field>
           </div>
-          <div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>MONTHLY PAYMENT</div>
-            <input type="number" value={debtMonthly} onChange={e => setDebtMonthly(e.target.value)} placeholder="0" style={inputStyle} />
-          </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            {editDebt && <Btn onClick={deleteDebt} danger>Delete</Btn>}
+          <Field label="Monthly Payment"><input type="number" value={debtForm.monthly} onChange={e => setDebtForm(f => ({ ...f, monthly: e.target.value }))} placeholder="0" style={inputStyle} /></Field>
+          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+            {editDebt && <Btn onClick={delDebt} danger>Delete</Btn>}
             <div style={{ flex: 1 }} />
             <Btn onClick={() => setShowDebtModal(false)} secondary>Cancel</Btn>
-            <Btn onClick={saveDebt} disabled={!debtName.trim() || !debtTotal}>Save</Btn>
+            <Btn onClick={saveDebt} disabled={!debtForm.name || !debtForm.total} color={C.red}>Save</Btn>
           </div>
         </div>
       </Modal>
 
       {/* Sub Modal */}
       <Modal show={showSubModal} onClose={() => setShowSubModal(false)} title={editSub ? "Edit Subscription" : "Add Subscription"}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>CURRENCY</div>
-            <div style={{ display: "flex", gap: 6 }}>
-              {["EUR", "IDR"].map(c => (
-                <button key={c} onClick={() => setSubCurrency(c)} style={{
-                  flex: 1, padding: "8px", borderRadius: 6,
-                  border: `1px solid ${subCurrency === c ? C.amber : C.border}`,
-                  background: subCurrency === c ? "rgba(249,202,36,0.1)" : "transparent",
-                  color: subCurrency === c ? C.amber : C.muted, fontSize: 12, cursor: "pointer",
-                }}>{c}</button>
-              ))}
-            </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            {["EUR", "IDR"].map(c => <PillBtn key={c} active={subForm.currency === c} onClick={() => setSubForm(f => ({ ...f, currency: c }))}>{c}</PillBtn>)}
           </div>
-          <div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>NAME</div>
-            <input value={subName} onChange={e => setSubName(e.target.value)} placeholder="e.g. Netflix" style={inputStyle} />
-          </div>
+          <Field label="Name"><input value={subForm.name} onChange={e => setSubForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Netflix" style={inputStyle} /></Field>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>AMOUNT</div>
-              <input type="number" value={subAmount} onChange={e => setSubAmount(e.target.value)} placeholder="0" style={inputStyle} />
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>RENEWAL</div>
-              <select value={subRenewal} onChange={e => setSubRenewal(e.target.value)} style={inputStyle}>
+            <Field label="Amount"><input type="number" value={subForm.amount} onChange={e => setSubForm(f => ({ ...f, amount: e.target.value }))} placeholder="0" style={inputStyle} /></Field>
+            <Field label="Renewal">
+              <select value={subForm.renewal} onChange={e => setSubForm(f => ({ ...f, renewal: e.target.value }))} style={inputStyle}>
                 {["Monthly", "Yearly", "Weekly", "Quarterly"].map(r => <option key={r} value={r}>{r}</option>)}
               </select>
-            </div>
+            </Field>
           </div>
-          <div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>NEXT DATE</div>
-            <input type="date" value={subNextDate} onChange={e => setSubNextDate(e.target.value)} style={inputStyle} />
-          </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            {editSub && <Btn onClick={deleteSub} danger>Delete</Btn>}
+          <Field label="Next Date"><input type="date" value={subForm.nextDate} onChange={e => setSubForm(f => ({ ...f, nextDate: e.target.value }))} style={inputStyle} /></Field>
+          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+            {editSub && <Btn onClick={delSub} danger>Delete</Btn>}
             <div style={{ flex: 1 }} />
             <Btn onClick={() => setShowSubModal(false)} secondary>Cancel</Btn>
-            <Btn onClick={saveSub} disabled={!subName.trim() || !subAmount}>Save</Btn>
+            <Btn onClick={saveSub} disabled={!subForm.name || !subForm.amount} color={C.orange}>Save</Btn>
           </div>
         </div>
       </Modal>
@@ -965,7 +794,9 @@ function DebtsSubsView({ data, upd }) {
   );
 }
 
-// ── Import/Export View ──────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// SYNC VIEW
+// ══════════════════════════════════════════════════════════════════════════════
 function SyncView({ data, setData }) {
   const [importText, setImportText] = useState("");
   const [showExport, setShowExport] = useState(false);
@@ -983,41 +814,39 @@ function SyncView({ data, setData }) {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 800 }}>
-      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Export Data</div>
-      <div style={{ background: C.surface, padding: 16, borderRadius: 8 }}>
-        <p style={{ color: C.muted, marginBottom: 12, fontSize: 12 }}>Copy this JSON and paste it on your other device to sync.</p>
-        <button onClick={() => setShowExport(!showExport)} style={{ padding: "8px 16px", borderRadius: 6, border: `1px solid ${C.border}`, background: "transparent", color: C.fg, cursor: "pointer", marginBottom: showExport ? 12 : 0 }}>
-          {showExport ? "Hide JSON" : "Show JSON"}
-        </button>
+    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 700 }}>
+      <GlassCard>
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>Export Data</div>
+        <p style={{ color: C.muted, marginBottom: 16, fontSize: 13, lineHeight: 1.5 }}>Copy this JSON and paste it on your other device to sync.</p>
+        <Btn onClick={() => setShowExport(!showExport)} secondary>{showExport ? "Hide JSON" : "Show JSON"}</Btn>
         {showExport && (
           <textarea
             readOnly
             value={JSON.stringify(data, null, 2)}
-            style={{ width: "100%", height: 200, padding: 12, borderRadius: 6, border: `1px solid ${C.border}`, background: "#0d0d0d", color: C.fg, fontSize: 11, fontFamily: "monospace", resize: "vertical" }}
+            style={{ width: "100%", height: 200, padding: 14, borderRadius: 10, border: `1px solid ${C.border}`, background: C.s2, color: C.fg, fontSize: 12, fontFamily: "monospace", resize: "vertical", marginTop: 16 }}
             onClick={e => e.target.select()}
           />
         )}
-      </div>
+      </GlassCard>
 
-      <div style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Import Data</div>
-      <div style={{ background: C.surface, padding: 16, borderRadius: 8 }}>
-        <p style={{ color: C.muted, marginBottom: 12, fontSize: 12 }}>Paste JSON from your other device to import.</p>
+      <GlassCard>
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>Import Data</div>
+        <p style={{ color: C.muted, marginBottom: 16, fontSize: 13, lineHeight: 1.5 }}>Paste JSON from another device to import. This will replace all current data.</p>
         <textarea
           value={importText}
           onChange={e => setImportText(e.target.value)}
           placeholder="Paste JSON here..."
-          style={{ width: "100%", height: 150, padding: 12, borderRadius: 6, border: `1px solid ${C.border}`, background: "#0d0d0d", color: C.fg, fontSize: 11, fontFamily: "monospace", resize: "vertical", marginBottom: 12 }}
+          style={{ width: "100%", height: 150, padding: 14, borderRadius: 10, border: `1px solid ${C.border}`, background: C.s2, color: C.fg, fontSize: 12, fontFamily: "monospace", resize: "vertical", marginBottom: 16 }}
         />
-        <button onClick={doImport} disabled={!importText.trim()} style={{ padding: "8px 16px", borderRadius: 6, border: "none", background: C.acc, color: "#000", cursor: "pointer", fontWeight: 600, opacity: importText.trim() ? 1 : 0.5 }}>
-          Import
-        </button>
-      </div>
+        <Btn onClick={doImport} disabled={!importText.trim()} danger>Import (Replace All Data)</Btn>
+      </GlassCard>
     </div>
   );
 }
 
-// ── Main App ────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// MAIN APP
+// ══════════════════════════════════════════════════════════════════════════════
 function VaultPlus() {
   const [tab, setTab] = useState("overview");
   const [data, setData] = useState(null);
@@ -1038,7 +867,6 @@ function VaultPlus() {
 
   if (!data) return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", color: C.muted }}>Loading...</div>;
 
-  // Stats
   const eurTotal = (data.eurAccounts || []).reduce((s, a) => s + (a.balance || 0), 0);
   const idrTotal = (data.idrAccounts || []).reduce((s, a) => s + (a.balance || 0), 0);
   const eurDebt = (data.debts || []).filter(d => d.currency === "EUR").reduce((s, d) => s + (d.remaining || 0), 0);
@@ -1056,20 +884,25 @@ function VaultPlus() {
   return (
     <div style={{ minHeight: "100vh", background: C.bg }}>
       {/* Header */}
-      <div style={{ padding: "16px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-1px" }}>vault<span style={{ color: C.acc }}>+</span></div>
+      <div style={{
+        padding: "16px 32px",
+        borderBottom: `1px solid ${C.border}`,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        background: `linear-gradient(180deg, ${C.s1} 0%, ${C.bg} 100%)`,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 40 }}>
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-1.5px" }}>vault<span style={{ color: C.acc }}>+</span></div>
           <Tabs tabs={tabs} active={tab} onChange={setTab} />
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 10, color: C.muted, marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>Net Worth</div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: C.green }}>{fmtEUR(eurTotal - eurDebt)}</div>
-          <div style={{ fontSize: 12, color: C.blue }}>{fmtIDR(idrTotal - idrDebt)}</div>
+        <div style={{ textAlign: "right", padding: "10px 16px", background: C.s1, borderRadius: 12, border: `1px solid ${C.border}` }}>
+          <div style={{ fontSize: 9, color: C.muted, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Net Worth</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: C.green }}>{fmtEUR(eurTotal - eurDebt)}</div>
+          <div style={{ fontSize: 12, color: C.blue, marginTop: 2 }}>{fmtIDR(idrTotal - idrDebt)}</div>
         </div>
       </div>
 
       {/* Content */}
-      <div style={{ padding: 24 }}>
+      <div style={{ padding: 32 }}>
         {tab === "overview" && <OverviewView data={data} />}
         {tab === "transactions" && <TransactionsView data={data} upd={upd} />}
         {tab === "monthly" && <MonthlyView data={data} />}
