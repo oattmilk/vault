@@ -241,7 +241,7 @@ function TxRow({t,onDelete,onEdit,compact}) {
       {t.pending && onEdit && (
         <button className="del" onClick={()=>onEdit(t)} style={{background:"none",border:"none",color:"var(--acc)",fontSize:14,cursor:"pointer",lineHeight:1,padding:"0 3px",flexShrink:0}}>✎</button>
       )}
-      {onDelete && <button className="del" onClick={()=>onDelete(t.id)} style={{background:"none",border:"none",color:"var(--dim)",fontSize:20,cursor:"pointer",lineHeight:1,padding:"0 4px",flexShrink:0,opacity:t.pending?1:0,transition:"opacity 0.15s"}}>×</button>}
+      {onDelete && <button className="del" onClick={()=>onDelete(t.id)} style={{background:"none",border:"none",color:"var(--dim)",fontSize:20,cursor:"pointer",lineHeight:1,padding:"0 4px",flexShrink:0,opacity:1}}>×</button>}
     </div>
   );
 }
@@ -437,8 +437,7 @@ function Vault() {
         input:focus,select:focus{border-color:var(--acc)!important;box-shadow:0 0 0 3px rgba(196,181,253,0.1)!important;}
         select option{background:var(--s2);}
         select{border-radius:12px;}
-        .txrow .del{opacity:0;}
-        .txrow:hover .del{opacity:1;}
+        
         .txrow:last-child{border-bottom:none!important;}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
         .au{animation:fadeUp 0.25s ease forwards;}
