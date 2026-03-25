@@ -239,9 +239,9 @@ function TxRow({t,onDelete,onEdit,compact}) {
       </div>
       <div style={{fontSize:14,fontWeight:700,color,whiteSpace:"nowrap"}}>{isInc?"+":"−"}{fmt(t.amount)}</div>
       {t.pending && onEdit && (
-        <button className="del" onClick={()=>onEdit(t)} style={{background:"none",border:"none",color:"var(--acc)",fontSize:14,cursor:"pointer",lineHeight:1,padding:"0 3px",flexShrink:0,opacity:0,transition:"opacity 0.15s"}}>✎</button>
+        <button className="del" onClick={()=>onEdit(t)} style={{background:"none",border:"none",color:"var(--acc)",fontSize:14,cursor:"pointer",lineHeight:1,padding:"0 3px",flexShrink:0}}>✎</button>
       )}
-      {onDelete && <button className="del" onClick={()=>onDelete(t.id)} style={{background:"none",border:"none",color:"var(--dim)",fontSize:20,cursor:"pointer",lineHeight:1,padding:"0 4px",flexShrink:0,opacity:0,transition:"opacity 0.15s"}}>×</button>}
+      {onDelete && <button className="del" onClick={()=>onDelete(t.id)} style={{background:"none",border:"none",color:"var(--dim)",fontSize:20,cursor:"pointer",lineHeight:1,padding:"0 4px",flexShrink:0,opacity:t.pending?1:0,transition:"opacity 0.15s"}}>×</button>}
     </div>
   );
 }
