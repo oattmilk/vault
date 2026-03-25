@@ -256,7 +256,7 @@ function TxRow({t,onDelete,onEdit,compact}) {
         {isInc?"+":"−"}{fmt(t.amount)}
       </div>
       {!t.pending && onDelete && (
-        <button className="del" onClick={e=>{e.stopPropagation();onDelete(t.id);}} style={{background:"none",border:"none",color:"var(--dim)",fontSize:18,cursor:"pointer",lineHeight:1,padding:"2px 4px",flexShrink:0}}>×</button>
+        <span style={{fontSize:11,color:"var(--dim)",flexShrink:0}}>›</span>
       )}
       {t.pending && <span style={{fontSize:11,color:"var(--dim)",flexShrink:0}}>›</span>}
     </>
@@ -264,8 +264,17 @@ function TxRow({t,onDelete,onEdit,compact}) {
 
   if(t.pending && onEdit) {
     return (
-      <div className="txrow" style={rowStyle} onClick={()=>onEdit(t)}
+      <div className="txrow" style={{...rowStyle,cursor:"pointer"}} onClick={()=>onEdit(t)}
         onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.03)"}
+        onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+        {inner}
+      </div>
+    );
+  }
+  if(!t.pending && onDelete) {
+    return (
+      <div className="txrow" style={{...rowStyle,cursor:"pointer"}} onClick={()=>onDelete(t.id)}
+        onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.02)"}
         onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
         {inner}
       </div>
@@ -758,26 +767,21 @@ function Track({data,upd,eurAccTotal,idrAccTotal}) {
           )}
         </div>
 
-        {/* Add button */}
-        <ActionBtn onClick={add} color={modeColor[mode]} disabled={!isValid}>
-          ADD {mode.toUpperCase()}
-        </ActionBtn>
-
-        {/* More options */}
+        {/* More options — collapsed by default, appears ABOVE Add button */}
         {mode!=="transfer"&&(
           <button onClick={()=>setShowMore(s=>!s)} style={{
-            background:"none",border:"none",color:"var(--muted)",
+            background:"none",border:"none",color:showMore?"var(--acc)":"var(--muted)",
             fontSize:11,cursor:"pointer",fontFamily:"var(--font)",
-            padding:"10px 0 2px",display:"flex",alignItems:"center",gap:4,
-            letterSpacing:"0.04em",
+            padding:"10px 0 6px",display:"flex",alignItems:"center",gap:5,
+            letterSpacing:"0.04em",width:"100%",
           }}>
-            <span style={{transition:"transform 0.2s",display:"inline-block",transform:showMore?"rotate(90deg)":"rotate(0)"}}>{showMore?"▾":"▸"}</span>
-            {showMore?"Less":"Date, note, pocket"}
+            <span style={{fontSize:10,transition:"transform 0.2s",display:"inline-block",transform:showMore?"rotate(90deg)":"rotate(0)"}}>▸</span>
+            {showMore?"Hide options":"Date, note, pocket"}
           </button>
         )}
 
         {showMore&&mode!=="transfer"&&(
-          <div style={{marginTop:14,paddingTop:14,borderTop:"1px solid var(--b1)",display:"flex",flexDirection:"column",gap:12}}>
+          <div style={{paddingBottom:14,borderBottom:"1px solid var(--b1)",marginBottom:14,display:"flex",flexDirection:"column",gap:12}}>
             <DatePicker label="DATE" value={date} onChange={v=>setDate(v)}/>
             {date>todayStr()&&<div style={{fontSize:11,color:"var(--amber)",display:"flex",alignItems:"center",gap:6}}>⏳ Will appear as upcoming</div>}
 
@@ -818,6 +822,11 @@ function Track({data,upd,eurAccTotal,idrAccTotal}) {
             })()}
           </div>
         )}
+
+        {/* Add button always at the bottom */}
+        <ActionBtn onClick={add} color={modeColor[mode]} disabled={!isValid}>
+          ADD {mode.toUpperCase()}
+        </ActionBtn>
       </FormCard>
 
       {/* No accounts warning */}
@@ -1090,6 +1099,53 @@ function Home({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurInvTo
 // ═══════════════════════════════════════
 // VAULT TAB
 // ═══════════════════════════════════════
+// ── CollapsibleSection — tap header to expand/collapse ────────────────────────
+function CollapsibleSection({title,summary,totalEl,accentColor,children,onAdd,addLabel,defaultOpen}) {
+  const [open,setOpen]=useState(defaultOpen||false);
+  const ac = accentColor||"var(--acc)";
+  return (
+    <div style={{
+      background:"linear-gradient(160deg,var(--s1),var(--s2))",
+      borderRadius:18,
+      border:`1px solid ${open?ac:"var(--b1)"}`,
+      marginBottom:14,
+      overflow:"hidden",
+      transition:"border-color 0.2s",
+    }}>
+      {/* Tappable header */}
+      <div onClick={()=>setOpen(o=>!o)} style={{
+        display:"flex",alignItems:"center",gap:12,
+        padding:"16px 18px",cursor:"pointer",
+      }}
+        onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.02)"}
+        onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+      >
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.14em",color:open?ac:"var(--muted)"}}>{title}</div>
+          {summary&&<div style={{fontSize:11,color:"var(--muted)",marginTop:3}}>{summary}</div>}
+        </div>
+        {totalEl&&<div style={{fontSize:15,fontWeight:700,flexShrink:0}}>{totalEl}</div>}
+        <span style={{fontSize:12,color:"var(--dim)",transform:open?"rotate(180deg)":"rotate(0)",transition:"transform 0.2s",flexShrink:0}}>▾</span>
+      </div>
+
+      {/* Expanded content */}
+      {open&&(
+        <div style={{borderTop:"1px solid var(--b1)",padding:"14px 16px 16px"}}>
+          {children}
+          {onAdd&&(
+            <button onClick={onAdd} style={{
+              background:"none",border:"none",color:ac,
+              fontSize:11,fontWeight:600,cursor:"pointer",
+              fontFamily:"var(--font)",letterSpacing:"0.04em",
+              padding:"10px 0 0",display:"block",
+            }}>+ {addLabel||"Add"}</button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function VaultTab({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurInvTotal,idrInvTotal,eurDebtTotal,idrDebtTotal}) {
   const goals=data.goals||[];
   const debts=data.debts||[];
@@ -1206,11 +1262,16 @@ function VaultTab({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurI
       </Section>
 
       {/* DEBTS */}
-      <Section title="DEBTS" subtitle={debts.length>0?`${debts.length} active`:"debt-free 🎉"} action={<AddBtn onClick={()=>setShowAddDebt(true)}/>}>
+      <CollapsibleSection
+        title="DEBTS"
+        summary={debts.length>0?`${debts.length} active · ${fmtEUR(eurDebtTotal)} remaining`:"debt-free 🎉"}
+        totalEl={debts.length>0?<span style={{color:"var(--red)"}}>−{fmtEUR(eurDebtTotal)}</span>:null}
+        accentColor="var(--red)"
+        onAdd={()=>setShowAddDebt(true)}
+        addLabel="Add debt"
+      >
         {debts.length===0?(
-          <div style={{background:"var(--s1)",borderRadius:16,padding:20,textAlign:"center",border:"1px solid var(--b1)"}}>
-            <div style={{fontSize:13,color:"var(--muted)"}}>No active debts</div>
-          </div>
+          <div style={{textAlign:"center",padding:"8px 0 4px",fontSize:13,color:"var(--muted)"}}>No active debts</div>
         ):(
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
             {debts.map(d=>{
@@ -1219,20 +1280,20 @@ function VaultTab({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurI
               const _tm=d.totalMonths||(d.total>0&&d.monthly>0?Math.round(d.total/d.monthly):0);
               const dynamicMonthly=_tm>0?d.remaining/_tm:d.monthly;
               return (
-                <div key={d.id} style={{background:"linear-gradient(160deg,var(--s1),var(--s2))",borderRadius:16,padding:16,border:"1px solid var(--b1)"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
-                    <div>
-                      <div style={{fontSize:14,fontWeight:600,color:"var(--fg)"}}>{d.name}</div>
+                <div key={d.id} style={{background:"var(--bg)",borderRadius:12,padding:14,border:"1px solid var(--b1)"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:13,fontWeight:600,color:"var(--fg)"}}>{d.name}</div>
                       <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{pct.toFixed(0)}% paid · {d.currency}</div>
                     </div>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <div style={{fontSize:16,fontWeight:700,color:"var(--red)"}}>{fmt(d.remaining)}</div>
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <div style={{fontSize:15,fontWeight:700,color:"var(--red)"}}>{fmt(d.remaining)}</div>
                       <MenuBtn items={[{label:"Delete",danger:true,action:()=>delDebt(d.id)}]}/>
                     </div>
                   </div>
                   <ProgressBar pct={pct} color="var(--green)"/>
                   {dynamicMonthly>0&&(
-                    <div style={{display:"flex",justifyContent:"space-between",marginTop:10,fontSize:11,color:"var(--muted)"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:11,color:"var(--muted)"}}>
                       <span>{fmt(dynamicMonthly)}/mo</span>
                       <span>{_tm} months</span>
                     </div>
@@ -1242,46 +1303,55 @@ function VaultTab({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurI
             })}
           </div>
         )}
-      </Section>
+      </CollapsibleSection>
 
       {/* SUBSCRIPTIONS */}
-      <Section title="SUBSCRIPTIONS" subtitle={subs.length>0?`${fmtEUR(subMonthlyEUR)}/mo`:"none active"} action={<AddBtn onClick={()=>setShowAddSub(true)}/>}>
+      <CollapsibleSection
+        title="SUBSCRIPTIONS"
+        summary={subs.length>0?`${subs.length} active`:"none tracked"}
+        totalEl={subs.length>0?<span style={{color:"var(--orange)"}}>{fmtEUR(subMonthlyEUR)}/mo</span>:null}
+        accentColor="var(--orange)"
+        onAdd={()=>setShowAddSub(true)}
+        addLabel="Add subscription"
+      >
         {subs.length===0?(
-          <div style={{background:"var(--s1)",borderRadius:16,padding:20,textAlign:"center",border:"1px solid var(--b1)"}}>
-            <div style={{fontSize:13,color:"var(--muted)"}}>No subscriptions tracked</div>
-          </div>
+          <div style={{textAlign:"center",padding:"8px 0 4px",fontSize:13,color:"var(--muted)"}}>No subscriptions tracked</div>
         ):(
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {subs.map(s=>{
               const fmt=s.currency==="IDR"?fmtIDR:fmtEUR;
               return (
-                <div key={s.id} style={{background:"linear-gradient(160deg,var(--s1),var(--s2))",borderRadius:14,padding:"14px 16px",border:"1px solid var(--b1)",display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{width:38,height:38,borderRadius:11,background:"rgba(251,146,60,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>🔄</div>
+                <div key={s.id} style={{background:"var(--bg)",borderRadius:12,padding:"12px 14px",border:"1px solid var(--b1)",display:"flex",alignItems:"center",gap:12}}>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:600,color:"var(--fg)"}}>{s.name}</div>
                     <div style={{fontSize:11,color:"var(--muted)",marginTop:1}}>{s.renewal} · {s.accountName}</div>
                   </div>
-                  <div style={{fontSize:15,fontWeight:700,color:"var(--orange)"}}>{fmt(s.amount)}</div>
+                  <div style={{fontSize:14,fontWeight:700,color:"var(--orange)"}}>{fmt(s.amount)}</div>
                   <MenuBtn items={[{label:"Delete",danger:true,action:()=>delSub(s.id)}]}/>
                 </div>
               );
             })}
           </div>
         )}
-      </Section>
+      </CollapsibleSection>
 
       {/* INVESTMENTS */}
-      <Section title="INVESTMENTS" subtitle={investments.length>0?`${investments.length} holding${investments.length!==1?"s":""}`:"none yet"} action={<AddBtn onClick={()=>setShowAddInvest(true)}/>}>
+      <CollapsibleSection
+        title="INVESTMENTS"
+        summary={investments.length>0?`${investments.length} holding${investments.length!==1?"s":""}`:"none tracked"}
+        totalEl={investments.length>0?<span style={{color:"var(--green)"}}>{fmtEUR(eurInvTotal)}</span>:null}
+        accentColor="var(--green)"
+        onAdd={()=>setShowAddInvest(true)}
+        addLabel="Add investment"
+      >
         {investments.length===0?(
-          <div style={{background:"var(--s1)",borderRadius:16,padding:20,textAlign:"center",border:"1px solid var(--b1)"}}>
-            <div style={{fontSize:13,color:"var(--muted)"}}>No investments tracked yet</div>
-          </div>
+          <div style={{textAlign:"center",padding:"8px 0 4px",fontSize:13,color:"var(--muted)"}}>No investments tracked yet</div>
         ):(
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
             {investments.map(inv=><InvestCard key={inv.id} inv={inv} upd={upd} investments={investments}/>)}
           </div>
         )}
-      </Section>
+      </CollapsibleSection>
 
       {/* MODALS */}
       <AddAccountModal show={showAddAccount} onClose={()=>setShowAddAccount(false)} data={data} upd={upd}/>
