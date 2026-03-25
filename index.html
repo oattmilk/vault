@@ -230,13 +230,12 @@ const bgColor = t.pending?“rgba(251,191,36,0.1)”:isInc?“rgba(16,185,129,0.
 // Settled rows: row is static, × delete button shown
 const rowStyle = {
 display:“flex”,alignItems:“center”,gap:10,
-padding:compact?“11px 0”:“13px 0”,
+padding:t.pending?(compact?“11px 8px”:“13px 8px”):(compact?“11px 0”:“13px 0”),
 borderBottom:“1px solid var(–b1)”,
 opacity:t.pending?0.9:1,
 cursor:t.pending&&onEdit?“pointer”:“default”,
 borderRadius:t.pending?“8px”:0,
 margin:t.pending?“0 -8px”:0,
-padding:t.pending?(compact?“11px 8px”:“13px 8px”):(compact?“11px 0”:“13px 0”),
 transition:“background 0.15s”,
 };
 
@@ -554,21 +553,8 @@ const allAccounts=[
 ];
 const hasAccounts=allAccounts.length>0;
 
-const defaultCurrency = data.lastCurrency||“EUR”;
-const defaultAccount = data.lastAccountId||allAccounts.find(a=>a.currency===defaultCurrency)?.id||””;
-const [currency,setCurrency]=useState(defaultCurrency);
-const [accountId,setAccountId]=useState(defaultAccount);
-
-// Sync accountId when currency changes or accounts list changes
-useEffect(()=>{
-if(!currency) return;
-const match = (data.eurAccounts.concat(data.idrAccounts)).find(a=>String(a.id)===String(accountId)&&a.currency===currency);
-if(!match){
-const accs = currency===“EUR”?data.eurAccounts:data.idrAccounts;
-setAccountId(accs[0]?.id||””);
-}
-// eslint-disable-next-line
-},[currency, data.eurAccounts.length, data.idrAccounts.length]);
+const [currency,setCurrency]=useState(data.lastCurrency||“EUR”);
+const [accountId,setAccountId]=useState(data.lastAccountId||allAccounts.find(a=>a.currency===(data.lastCurrency||“EUR”))?.id||””);
 const [amount,setAmount]=useState(””);
 const [category,setCategory]=useState(data.lastCategory||“Food”);
 const [note,setNote]=useState(””);
