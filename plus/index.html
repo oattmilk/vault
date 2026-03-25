@@ -938,9 +938,8 @@
     <div class="tab-panel" id="panel-sync">
       <div class="sync-card fade-up">
         <div class="sync-title">vault. Data</div>
-        <div class="sync-desc">vault+ reads from the same <code style="background:var(--b2);padding:2px 6px;border-radius:5px;font-size:12px;">vault_v4</code> localStorage key used by the mobile app. Open vault+ on the same browser where you use vault. to see your data automatically.</div>
-        <div id="sync-status-rows">
-          <div class="sync-status-row"><span class="sync-status-label">localStorage key</span><span class="sync-status-val" style="font-family:monospace;font-size:12px;">vault_v4</span></div>
+        <div class="sync-desc">vault+ auto-detects which key vault. is using. Both apps must be open in the same browser on <code style="background:var(--b2);padding:2px 6px;border-radius:5px;font-size:12px;">oattmilk.github.io</code>.</div>
+        <div>
           <div class="sync-status-row"><span class="sync-status-label">Data found</span><span class="sync-status-val" id="sync-data-found">Checking…</span></div>
           <div class="sync-status-row"><span class="sync-status-label">Last modified</span><span class="sync-status-val" id="sync-last-mod">—</span></div>
           <div class="sync-status-row"><span class="sync-status-label">Accounts</span><span class="sync-status-val" id="sync-acc-count">—</span></div>
@@ -949,13 +948,28 @@
       </div>
 
       <div class="sync-card fade-up delay-1">
-        <div class="sync-title">Manual Data Paste</div>
-        <div class="sync-desc">If vault+ is on a different browser, copy your vault_v4 JSON from the mobile browser's DevTools → Application → localStorage, and paste it here.</div>
-        <textarea id="paste-json" placeholder='Paste vault_v4 JSON here…' style="width:100%;background:var(--b1);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;font-family:monospace;font-size:12px;color:var(--fg);resize:vertical;min-height:100px;outline:none;margin-bottom:14px;"></textarea>
-        <button class="sync-btn" onclick="loadPasted()">⤵ Load Pasted Data</button>
+        <div class="sync-title">All localStorage Keys on This Origin</div>
+        <div class="sync-desc">Every key stored at <code style="background:var(--b2);padding:2px 6px;border-radius:5px;font-size:12px;">oattmilk.github.io</code>. If vault.'s data appears under a different key, hit <strong style="color:var(--acc)">Use this</strong> to load it.</div>
+        <div id="sync-key-scan" style="margin-top:4px">
+          <div style="color:var(--muted);font-size:13px;padding:12px 0;">Scanning…</div>
+        </div>
+        <button class="sync-btn" style="margin-top:14px" onclick="loadFromStorage();renderAll();renderSync();">↺ Re-scan</button>
       </div>
 
       <div class="sync-card fade-up delay-2">
+        <div class="sync-title">Raw Data Shape</div>
+        <div class="sync-desc">The top-level structure of your vault. data. This shows what keys exist so we can confirm vault+ is reading the right fields.</div>
+        <div id="sync-inspector" style="margin-top:4px;max-height:280px;overflow-y:auto"></div>
+      </div>
+
+      <div class="sync-card fade-up delay-3">
+        <div class="sync-title">Manual Data Paste</div>
+        <div class="sync-desc">On a different browser? Open vault. DevTools → Application → localStorage, copy the value, paste it here.</div>
+        <textarea id="paste-json" placeholder='Paste vault JSON here…' style="width:100%;background:var(--b1);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;font-family:monospace;font-size:12px;color:var(--fg);resize:vertical;min-height:100px;outline:none;margin-bottom:14px;"></textarea>
+        <button class="sync-btn" onclick="loadPasted()">⤵ Load Pasted Data</button>
+      </div>
+
+      <div class="sync-card fade-up delay-3">
         <div class="sync-title" style="color:var(--red);">Danger Zone</div>
         <div class="sync-desc">Clear all vault+ display data. This does not affect your vault. mobile data.</div>
         <button class="sync-btn danger" onclick="clearData()">✕ Clear Loaded Data</button>
@@ -1011,13 +1025,47 @@ function changeMonth(dir) {
 }
 
 // ─── Data loading ─────────────────────────────────────────────────────────────
+// All known keys vault. has used across versions
+const KNOWN_KEYS = ['vault_v4', 'vault_v3', 'vault_v2', 'vault_v1', 'vault_data', 'vaultData', 'vault'];
+let activeStorageKey = null;
+
 function loadFromStorage() {
   try {
-    const raw = localStorage.getItem('vault_v4');
-    if (!raw) return false;
-    appData = JSON.parse(raw);
-    return true;
+    for (const key of KNOWN_KEYS) {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Basic sanity check — must have at least one of these
+        if (parsed && (parsed.accounts || parsed.transactions || parsed.history || parsed.debts)) {
+          appData = parsed;
+          activeStorageKey = key;
+          return true;
+        }
+      }
+    }
+    return false;
   } catch(e) { return false; }
+}
+
+function scanAllKeys() {
+  const results = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    try {
+      const raw = localStorage.getItem(key);
+      const size = raw ? (raw.length / 1024).toFixed(1) + ' KB' : '0 KB';
+      let preview = '—';
+      try {
+        const p = JSON.parse(raw);
+        const keys = Object.keys(p).slice(0, 4).join(', ');
+        preview = `{${keys}${Object.keys(p).length > 4 ? '…' : ''}}`;
+      } catch(e) {
+        preview = (raw || '').slice(0, 40);
+      }
+      results.push({ key, size, preview });
+    } catch(e) {}
+  }
+  return results;
 }
 
 function loadPasted() {
@@ -1045,24 +1093,79 @@ function fmt(n, currency) {
   return 'Rp ' + Math.round(n).toLocaleString('id-ID');
 }
 
+// Dig into appData and find the accounts array regardless of nesting
 function getAccounts() {
   if (!appData) return [];
-  return (appData.accounts || []).filter(a => !a.currency || a.currency === activeCurrency || activeCurrency === 'ALL');
+  // Try all known locations
+  const raw =
+    appData.accounts ||
+    appData.data?.accounts ||
+    appData.vault?.accounts ||
+    appData.state?.accounts ||
+    // Sometimes vault. stores EUR and IDR as separate top-level keys
+    (appData.EUR?.accounts || appData.IDR?.accounts ? [...(appData.EUR?.accounts||[]), ...(appData.IDR?.accounts||[])] : null) ||
+    [];
+  return raw.filter(a => !a.currency || a.currency === activeCurrency);
+}
+
+// Get balance from a pocket regardless of field name
+function getPocketBalance(p) {
+  return p.balance ?? p.amount ?? p.currentBalance ?? p.current ?? 0;
 }
 
 function getTransactions() {
   if (!appData) return [];
-  return (appData.transactions || appData.history || []);
+  return (
+    appData.transactions ||
+    appData.history ||
+    appData.data?.transactions ||
+    appData.data?.history ||
+    appData.state?.transactions ||
+    appData[activeCurrency]?.transactions ||
+    []
+  );
 }
 
 function getDebts() {
   if (!appData) return [];
-  return appData.debts || [];
+  return appData.debts || appData.data?.debts || appData.state?.debts || [];
 }
 
 function getSubs() {
   if (!appData) return [];
-  return appData.subscriptions || appData.subs || [];
+  return appData.subscriptions || appData.subs || appData.data?.subscriptions || appData.state?.subscriptions || [];
+}
+
+// ─── Data shape inspector (shown in Sync tab) ─────────────────────────────────
+function buildInspector() {
+  if (!appData) return '<div style="color:var(--muted);font-size:13px">No data loaded.</div>';
+
+  function describeValue(val, depth) {
+    if (depth > 2) return '<span style="color:var(--muted)">…</span>';
+    if (val === null) return '<span style="color:var(--muted)">null</span>';
+    if (Array.isArray(val)) {
+      if (!val.length) return '<span style="color:var(--muted)">[]</span>';
+      const sample = val[0];
+      const inner = typeof sample === 'object' && sample
+        ? '{' + Object.keys(sample).slice(0, 6).join(', ') + (Object.keys(sample).length > 6 ? '…' : '') + '}'
+        : String(sample);
+      return `<span style="color:var(--amber)">[${val.length}]</span> <span style="color:var(--muted);font-size:11px">${inner}</span>`;
+    }
+    if (typeof val === 'object') {
+      const keys = Object.keys(val);
+      return `<span style="color:var(--blue)">{${keys.slice(0,5).join(', ')}${keys.length>5?'…':''}}</span>`;
+    }
+    return `<span style="color:var(--green)">${String(val).slice(0,40)}</span>`;
+  }
+
+  const rows = Object.entries(appData).map(([k, v]) =>
+    `<div style="display:flex;gap:16px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px;align-items:baseline">
+      <span style="font-family:monospace;color:var(--acc);min-width:160px;flex-shrink:0">${k}</span>
+      <span>${describeValue(v, 0)}</span>
+    </div>`
+  ).join('');
+
+  return rows || '<div style="color:var(--muted);font-size:13px">Object is empty.</div>';
 }
 
 function monthTxs() {
@@ -1105,7 +1208,7 @@ function renderOverview() {
   // Compute totals
   const totalAssets = accounts.reduce((s, a) => {
     const pockets = a.pockets || [];
-    return s + pockets.reduce((ps, p) => ps + (p.balance || 0), 0);
+    return s + pockets.reduce((ps, p) => ps + getPocketBalance(p), 0);
   }, 0);
 
   const totalDebt = debts.filter(d => !d.currency || d.currency === activeCurrency)
@@ -1137,7 +1240,7 @@ function renderOverview() {
     accEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:16px 0;text-align:center;">No accounts</div>';
   } else {
     accEl.innerHTML = accounts.slice(0, 5).map(a => {
-      const bal = (a.pockets || []).reduce((s, p) => s + (p.balance || 0), 0);
+      const bal = (a.pockets || []).reduce((s, p) => s + getPocketBalance(p), 0);
       const icon = ACCOUNT_ICONS[a.type] || ACCOUNT_ICONS.default;
       const iconBg = a.color ? `background:${a.color}22` : 'background:rgba(96,165,250,0.1)';
       return `<div class="account-row">
@@ -1411,11 +1514,11 @@ function renderMonthly() {
   if (!allPockets.length) {
     pockEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:24px 0;text-align:center;">No pocket data</div>';
   } else {
-    const maxBal = Math.max(...allPockets.map(p => p.balance||0)) || 1;
+    const maxBal = Math.max(...allPockets.map(p => getPocketBalance(p))) || 1;
     pockEl.innerHTML = allPockets.map(p => {
-      const pct = Math.round(((p.balance||0) / maxBal) * 100);
+      const pct = Math.round((getPocketBalance(p) / maxBal) * 100);
       const isSaving = p.type === 'saving';
-      const goalPct  = isSaving && p.goal ? Math.min(100, Math.round((p.balance/p.goal)*100)) : null;
+      const goalPct  = isSaving && p.goal ? Math.min(100, Math.round((getPocketBalance(p)/p.goal)*100)) : null;
       return `<div class="pocket-row">
         <div>
           <div style="font-size:13px;font-weight:500">${p.name}</div>
@@ -1425,7 +1528,7 @@ function renderMonthly() {
           </div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:14px;font-weight:600">${fmt(p.balance||0)}</div>
+          <div style="font-size:14px;font-weight:600">${fmt(getPocketBalance(p))}</div>
           ${goalPct !== null ? `<div style="font-size:11px;color:var(--green);margin-top:2px">${goalPct}% of goal</div>` : ''}
         </div>
       </div>`;
@@ -1445,20 +1548,20 @@ function renderAccounts() {
 
   el.innerHTML = accounts.map((a, ai) => {
     const pockets = a.pockets || [];
-    const total = pockets.reduce((s, p) => s + (p.balance||0), 0);
+    const total = pockets.reduce((s, p) => s + getPocketBalance(p), 0);
     const icon = ACCOUNT_ICONS[a.type] || ACCOUNT_ICONS.default;
     const delayClass = `delay-${ai % 6}`;
 
     const pocketRows = pockets.map(p => {
       const isSaving = p.type === 'saving';
-      const pct = isSaving && p.goal ? Math.min(100, Math.round((p.balance||0)/p.goal*100)) : null;
+      const pct = isSaving && p.goal ? Math.min(100, Math.round(getPocketBalance(p)/p.goal*100)) : null;
       return `<div class="pocket-row">
         <div>
           <div style="font-size:13px;font-weight:500">${p.name}</div>
           ${isSaving ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">Saving · ${pct}% of goal</div>` : ''}
           ${pct !== null ? `<div class="pocket-bar-mini"><div class="pocket-bar-mini-fill" style="width:${pct}%;background:var(--green)"></div></div>` : ''}
         </div>
-        <div style="font-size:14px;font-weight:600">${fmt(p.balance||0)}</div>
+        <div style="font-size:14px;font-weight:600">${fmt(getPocketBalance(p))}</div>
       </div>`;
     }).join('');
 
@@ -1534,7 +1637,7 @@ function renderDebts() {
 // ─── Sync ─────────────────────────────────────────────────────────────────────
 function renderSync() {
   const found = appData !== null;
-  document.getElementById('sync-data-found').textContent = found ? '✓ Yes' : '✗ No';
+  document.getElementById('sync-data-found').textContent = found ? `✓ Yes (key: ${activeStorageKey})` : '✗ No';
   document.getElementById('sync-data-found').style.color = found ? 'var(--green)' : 'var(--red)';
 
   if (found) {
@@ -1548,6 +1651,43 @@ function renderSync() {
     document.getElementById('sync-acc-count').textContent = '—';
     document.getElementById('sync-tx-count').textContent  = '—';
     document.getElementById('sync-last-mod').textContent  = '—';
+  }
+
+  // Inspector
+  const inspectorEl = document.getElementById('sync-inspector');
+  if (inspectorEl) inspectorEl.innerHTML = buildInspector();
+  const allKeys = scanAllKeys();
+  if (!allKeys.length) {
+    scanEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px 0;">localStorage is empty on this origin.</div>';
+  } else {
+    scanEl.innerHTML = allKeys.map(({ key, size, preview }) => {
+      const isActive = key === activeStorageKey;
+      const isKnown  = KNOWN_KEYS.includes(key);
+      return `<div style="display:flex;align-items:flex-start;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-family:monospace;font-size:12px;color:${isActive?'var(--green)':isKnown?'var(--acc)':'var(--fg)'};margin-bottom:3px">${key}${isActive?' ← active':''}</div>
+          <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${preview}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <span style="font-size:11px;color:var(--muted)">${size}</span>
+          ${!isActive ? `<button onclick="loadKey('${key}')" style="padding:4px 10px;border-radius:7px;border:1px solid rgba(196,181,253,0.2);background:rgba(196,181,253,0.08);color:var(--acc);font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer">Use this</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function loadKey(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) { alert('Key is empty.'); return; }
+    appData = JSON.parse(raw);
+    activeStorageKey = key;
+    renderAll();
+    renderSync();
+    alert(`✓ Loaded data from "${key}"`);
+  } catch(e) {
+    alert('Could not parse data from this key: ' + e.message);
   }
 }
 
