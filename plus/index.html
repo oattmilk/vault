@@ -1093,47 +1093,63 @@ function fmt(n, currency) {
   return 'Rp ' + Math.round(n).toLocaleString('id-ID');
 }
 
-// Dig into appData and find the accounts array regardless of nesting
+// ── vault. schema adapters ────────────────────────────────────────────────────
+// Accounts: stored as eurAccounts / idrAccounts (flat, no pockets)
 function getAccounts() {
   if (!appData) return [];
-  // Try all known locations
-  const raw =
-    appData.accounts ||
-    appData.data?.accounts ||
-    appData.vault?.accounts ||
-    appData.state?.accounts ||
-    // Sometimes vault. stores EUR and IDR as separate top-level keys
-    (appData.EUR?.accounts || appData.IDR?.accounts ? [...(appData.EUR?.accounts||[]), ...(appData.IDR?.accounts||[])] : null) ||
-    [];
-  return raw.filter(a => !a.currency || a.currency === activeCurrency);
+  if (activeCurrency === 'EUR') return appData.eurAccounts || appData.accounts || [];
+  if (activeCurrency === 'IDR') return appData.idrAccounts || [];
+  // Both (fallback)
+  return [...(appData.eurAccounts || []), ...(appData.idrAccounts || []), ...(appData.accounts || [])];
 }
 
-// Get balance from a pocket regardless of field name
+// Accounts are flat — balance lives directly on the account object
+function getAccountBalance(a) {
+  return a.balance ?? a.amount ?? a.currentBalance ?? 0;
+}
+
+// Legacy pockets path (kept for safety), falls back to flat balance
 function getPocketBalance(p) {
   return p.balance ?? p.amount ?? p.currentBalance ?? p.current ?? 0;
 }
 
+// Transactions: top-level, filter by currency
 function getTransactions() {
   if (!appData) return [];
-  return (
-    appData.transactions ||
-    appData.history ||
-    appData.data?.transactions ||
-    appData.data?.history ||
-    appData.state?.transactions ||
-    appData[activeCurrency]?.transactions ||
-    []
-  );
+  const all = appData.transactions || appData.history || [];
+  return all.filter(t => !t.currency || t.currency === activeCurrency);
 }
 
+// Debts: use `total` for amount, `months` for term
 function getDebts() {
   if (!appData) return [];
-  return appData.debts || appData.data?.debts || appData.state?.debts || [];
+  return (appData.debts || []).filter(d => !d.currency || d.currency === activeCurrency);
 }
 
+// Subs: use `renewal` for cycle ('monthly'/'yearly')
 function getSubs() {
   if (!appData) return [];
-  return appData.subscriptions || appData.subs || appData.data?.subscriptions || appData.state?.subscriptions || [];
+  return (appData.subscriptions || appData.subs || []).filter(s => !s.currency || s.currency === activeCurrency);
+}
+
+// Normalise a debt object to consistent field names
+function normaliseDebt(d) {
+  return {
+    ...d,
+    remaining: d.remaining ?? d.balance ?? d.total ?? 0,
+    originalAmount: d.originalAmount ?? d.total ?? 0,
+    totalMonths: d.totalMonths ?? d.months ?? 0,
+    monthlyPayment: d.monthlyPayment ?? (d.months ? Math.round((d.remaining ?? d.total ?? 0) / d.months) : 0),
+  };
+}
+
+// Normalise a subscription object
+function normaliseSub(s) {
+  return {
+    ...s,
+    cycle: s.cycle ?? s.renewal ?? 'monthly',
+    nextDate: s.nextDate ?? s.nextBillingDate ?? s.renewal_date ?? null,
+  };
 }
 
 // ─── Data shape inspector (shown in Sync tab) ─────────────────────────────────
@@ -1201,36 +1217,26 @@ function renderTab(name) {
 // ─── Overview ────────────────────────────────────────────────────────────────
 function renderOverview() {
   const accounts = getAccounts();
-  const debts    = getDebts();
-  const subs     = getSubs();
+  const debts    = getDebts().map(normaliseDebt);
+  const subs     = getSubs().map(normaliseSub);
   const txs      = monthTxs();
 
-  // Compute totals
-  const totalAssets = accounts.reduce((s, a) => {
-    const pockets = a.pockets || [];
-    return s + pockets.reduce((ps, p) => ps + getPocketBalance(p), 0);
+  // Flat accounts — balance directly on account
+  const totalAssets = accounts.reduce((s, a) => s + getAccountBalance(a), 0);
+  const totalDebt   = debts.reduce((s, d) => s + d.remaining, 0);
+  const netWorth    = totalAssets - totalDebt;
+
+  const monthlySubTotal = subs.reduce((acc, s) => {
+    const amt = s.amount || 0;
+    return acc + (s.cycle === 'yearly' ? amt / 12 : amt);
   }, 0);
-
-  const totalDebt = debts.filter(d => !d.currency || d.currency === activeCurrency)
-    .reduce((s, d) => s + (d.remaining || d.balance || 0), 0);
-
-  const netWorth = totalAssets - totalDebt;
-
-  const monthlySubTotal = subs
-    .filter(s => !s.currency || s.currency === activeCurrency)
-    .reduce((acc, s) => {
-      const amt = s.amount || 0;
-      return acc + (s.cycle === 'yearly' ? amt / 12 : amt);
-    }, 0);
-
-  const pocketCount = accounts.reduce((s, a) => s + (a.pockets || []).length, 0);
 
   document.getElementById('ov-networth').textContent  = fmt(netWorth);
   document.getElementById('ov-accounts').textContent  = fmt(totalAssets);
   document.getElementById('ov-debts').textContent     = fmt(totalDebt);
   document.getElementById('ov-subs').textContent      = fmt(monthlySubTotal);
   document.getElementById('ov-nw-sub').textContent    = netWorth >= 0 ? 'positive net worth' : 'net liability';
-  document.getElementById('ov-acc-sub').textContent   = `across ${pocketCount} pocket${pocketCount !== 1 ? 's' : ''}`;
+  document.getElementById('ov-acc-sub').textContent   = `across ${accounts.length} account${accounts.length !== 1 ? 's' : ''}`;
   document.getElementById('ov-debt-sub').textContent  = `${debts.length} active loan${debts.length !== 1 ? 's' : ''}`;
   document.getElementById('ov-subs-sub').textContent  = `${subs.length} subscription${subs.length !== 1 ? 's' : ''}`;
 
@@ -1240,7 +1246,7 @@ function renderOverview() {
     accEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:16px 0;text-align:center;">No accounts</div>';
   } else {
     accEl.innerHTML = accounts.slice(0, 5).map(a => {
-      const bal = (a.pockets || []).reduce((s, p) => s + getPocketBalance(p), 0);
+      const bal = getAccountBalance(a);
       const icon = ACCOUNT_ICONS[a.type] || ACCOUNT_ICONS.default;
       const iconBg = a.color ? `background:${a.color}22` : 'background:rgba(96,165,250,0.1)';
       return `<div class="account-row">
@@ -1248,21 +1254,16 @@ function renderOverview() {
           <div class="account-icon" style="${iconBg}">${icon}</div>
           <div>
             <div class="account-name">${a.name || 'Account'}</div>
-            <div class="account-type">${(a.pockets||[]).length} pocket${(a.pockets||[]).length!==1?'s':''}</div>
+            <div class="account-type">${a.currency || activeCurrency}${a.rate ? ` · ${a.rate}% p.a.` : ''}</div>
           </div>
         </div>
-        <div class="account-amount">${fmt(bal)}</div>
+        <div class="account-amount">${fmt(bal, a.currency)}</div>
       </div>`;
     }).join('');
   }
 
-  // Donut chart
   renderDonut(txs);
-
-  // 6-month trend
   renderTrend();
-
-  // Upcoming bills
   renderUpcoming();
 }
 
@@ -1383,18 +1384,18 @@ function renderTrend() {
 }
 
 function renderUpcoming() {
-  const subs = getSubs();
+  const subs = getSubs().map(normaliseSub);
   const today = new Date();
   const el = document.getElementById('ov-bills-list');
 
   const upcoming = subs
-    .filter(s => !s.currency || s.currency === activeCurrency)
     .map(s => {
-      const next = new Date(s.nextDate || s.nextBillingDate || today);
+      const next = s.nextDate ? new Date(s.nextDate) : null;
+      if (!next || isNaN(next)) return null;
       const diff = Math.ceil((next - today) / 86400000);
       return { ...s, next, diff };
     })
-    .filter(s => s.diff >= 0 && s.diff <= 30)
+    .filter(s => s && s.diff >= 0 && s.diff <= 30)
     .sort((a, b) => a.diff - b.diff)
     .slice(0, 5);
 
@@ -1507,30 +1508,25 @@ function renderMonthly() {
         </div>`).join('')
     : '<div style="color:var(--muted);font-size:13px;padding:24px 0;text-align:center;">No category data</div>';
 
-  // Pockets
+  // Account balances (replaces pocket performance — vault. has flat accounts)
   const pockEl = document.getElementById('mo-pockets');
-  const allPockets = [];
-  getAccounts().forEach(a => (a.pockets||[]).forEach(p => allPockets.push({...p, accountName: a.name})));
-  if (!allPockets.length) {
-    pockEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:24px 0;text-align:center;">No pocket data</div>';
+  const allAccounts = [...(appData?.eurAccounts||[]), ...(appData?.idrAccounts||[])];
+  if (!allAccounts.length) {
+    pockEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:24px 0;text-align:center;">No account data</div>';
   } else {
-    const maxBal = Math.max(...allPockets.map(p => getPocketBalance(p))) || 1;
-    pockEl.innerHTML = allPockets.map(p => {
-      const pct = Math.round((getPocketBalance(p) / maxBal) * 100);
-      const isSaving = p.type === 'saving';
-      const goalPct  = isSaving && p.goal ? Math.min(100, Math.round((getPocketBalance(p)/p.goal)*100)) : null;
+    const maxBal = Math.max(...allAccounts.map(a => getAccountBalance(a))) || 1;
+    pockEl.innerHTML = allAccounts.map(a => {
+      const bal = getAccountBalance(a);
+      const pct = Math.round((bal / maxBal) * 100);
       return `<div class="pocket-row">
-        <div>
-          <div style="font-size:13px;font-weight:500">${p.name}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">${p.accountName}${isSaving?' · Saving':''}</div>
-          <div class="pocket-bar-mini">
-            <div class="pocket-bar-mini-fill" style="width:${goalPct ?? pct}%;background:${isSaving?'var(--green)':'var(--acc)'}"></div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${a.name}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${a.currency || activeCurrency}</div>
+          <div class="pocket-bar-mini" style="width:100%">
+            <div class="pocket-bar-mini-fill" style="width:${pct}%;background:var(--acc)"></div>
           </div>
         </div>
-        <div style="text-align:right">
-          <div style="font-size:14px;font-weight:600">${fmt(getPocketBalance(p))}</div>
-          ${goalPct !== null ? `<div style="font-size:11px;color:var(--green);margin-top:2px">${goalPct}% of goal</div>` : ''}
-        </div>
+        <div style="font-size:14px;font-weight:600;margin-left:16px">${fmt(bal, a.currency)}</div>
       </div>`;
     }).join('');
   }
@@ -1538,53 +1534,48 @@ function renderMonthly() {
 
 // ─── Accounts ────────────────────────────────────────────────────────────────
 function renderAccounts() {
-  const accounts = getAccounts();
+  // Show both EUR and IDR accounts in a combined view
+  const eurAccounts = appData?.eurAccounts || [];
+  const idrAccounts = appData?.idrAccounts || [];
+  const allAccounts = [...eurAccounts, ...idrAccounts];
   const el = document.getElementById('accounts-list');
 
-  if (!accounts.length) {
+  if (!allAccounts.length) {
     el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:32px 0;text-align:center;">No accounts found — open vault+ on the same browser as vault.</div>';
     return;
   }
 
-  el.innerHTML = accounts.map((a, ai) => {
-    const pockets = a.pockets || [];
-    const total = pockets.reduce((s, p) => s + getPocketBalance(p), 0);
-    const icon = ACCOUNT_ICONS[a.type] || ACCOUNT_ICONS.default;
-    const delayClass = `delay-${ai % 6}`;
+  // Group by currency
+  const groups = [];
+  if (eurAccounts.length) groups.push({ label: 'EUR Accounts', accounts: eurAccounts, cur: 'EUR' });
+  if (idrAccounts.length) groups.push({ label: 'IDR Accounts', accounts: idrAccounts, cur: 'IDR' });
 
-    const pocketRows = pockets.map(p => {
-      const isSaving = p.type === 'saving';
-      const pct = isSaving && p.goal ? Math.min(100, Math.round(getPocketBalance(p)/p.goal*100)) : null;
-      return `<div class="pocket-row">
-        <div>
-          <div style="font-size:13px;font-weight:500">${p.name}</div>
-          ${isSaving ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">Saving · ${pct}% of goal</div>` : ''}
-          ${pct !== null ? `<div class="pocket-bar-mini"><div class="pocket-bar-mini-fill" style="width:${pct}%;background:var(--green)"></div></div>` : ''}
-        </div>
-        <div style="font-size:14px;font-weight:600">${fmt(getPocketBalance(p))}</div>
-      </div>`;
-    }).join('');
-
-    return `<div class="glass-card fade-up ${delayClass}" style="margin-bottom:14px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div class="account-icon" style="background:rgba(196,181,253,0.1);font-size:18px;">${icon}</div>
-          <div>
-            <div style="font-size:15px;font-weight:600">${a.name}</div>
-            <div style="font-size:11px;color:var(--muted);text-transform:capitalize">${a.type || 'Account'} · ${a.currency || activeCurrency}</div>
+  el.innerHTML = groups.map(g => `
+    <div style="margin-bottom:8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding-bottom:8px">${g.label}</div>
+    ${g.accounts.map((a, ai) => {
+      const bal = getAccountBalance(a);
+      const icon = ACCOUNT_ICONS[a.type] || ACCOUNT_ICONS.default;
+      const delayClass = `delay-${ai % 6}`;
+      return `<div class="glass-card fade-up ${delayClass}" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="account-icon" style="background:rgba(196,181,253,0.1);font-size:18px;">${icon}</div>
+            <div>
+              <div style="font-size:15px;font-weight:600">${a.name}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">${a.type || 'Account'}${a.rate ? ` · ${a.rate}% p.a.` : ''}${a.note ? ` · ${a.note}` : ''}</div>
+            </div>
           </div>
+          <div style="font-size:18px;font-weight:700;color:var(--acc)">${fmt(bal, g.cur)}</div>
         </div>
-        <div style="font-size:18px;font-weight:700;color:var(--acc)">${fmt(total)}</div>
-      </div>
-      ${pocketRows || '<div style="color:var(--muted);font-size:13px">No pockets</div>'}
-    </div>`;
-  }).join('');
+      </div>`;
+    }).join('')}
+  `).join('<div style="margin-bottom:20px"></div>');
 }
 
 // ─── Debts & Subs ────────────────────────────────────────────────────────────
 function renderDebts() {
-  const debts = getDebts();
-  const subs  = getSubs();
+  const debts = getDebts().map(normaliseDebt);
+  const subs  = getSubs().map(normaliseSub);
 
   // Debts
   const debtEl = document.getElementById('debts-list');
@@ -1592,41 +1583,39 @@ function renderDebts() {
     debtEl.innerHTML = '<div class="glass-card" style="color:var(--muted);font-size:13px;padding:24px;text-align:center;">No debts 🎉</div>';
   } else {
     debtEl.innerHTML = debts.map((d, i) => {
-      const paid    = d.originalAmount ? d.originalAmount - (d.remaining || d.balance || 0) : 0;
-      const total   = d.originalAmount || (d.remaining || d.balance || 0);
-      const pct     = total ? Math.round((paid / total) * 100) : 0;
-      const monthly = d.monthlyPayment || (d.totalMonths ? Math.round((d.remaining||d.balance||0) / d.totalMonths) : 0);
+      const paid = d.originalAmount - d.remaining;
+      const pct  = d.originalAmount ? Math.max(0, Math.round((paid / d.originalAmount) * 100)) : 0;
       return `<div class="debt-card fade-up delay-${i % 4}">
         <div class="debt-header">
           <div>
             <div class="debt-name">${d.name}</div>
-            <div class="debt-type">${d.type || 'Loan'} · ${d.currency || activeCurrency}</div>
+            <div class="debt-type">${d.type || 'Loan'} · ${d.currency || activeCurrency}${d.totalMonths ? ` · ${d.totalMonths} months` : ''}</div>
           </div>
-          <div class="debt-bal">${fmt(d.remaining || d.balance || 0, d.currency)}</div>
+          <div class="debt-bal">${fmt(d.remaining, d.currency)}</div>
         </div>
         <div class="debt-progress-track">
           <div class="debt-progress-fill" style="width:${pct}%"></div>
         </div>
         <div class="debt-footer">
           <span>${pct}% paid off</span>
-          ${monthly ? `<span>${fmt(monthly, d.currency)}/mo</span>` : ''}
-          ${d.totalMonths ? `<span>${d.totalMonths} months total</span>` : ''}
+          ${d.monthlyPayment ? `<span>${fmt(d.monthlyPayment, d.currency)}/mo</span>` : ''}
+          ${d.nextDate ? `<span>next: ${new Date(d.nextDate).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</span>` : ''}
         </div>
       </div>`;
     }).join('');
   }
 
-  // Subs
+  // Subs — use `renewal` field for cycle label
   const subEl = document.getElementById('subs-list');
   if (!subs.length) {
     subEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:16px 0;text-align:center;">No subscriptions</div>';
   } else {
     subEl.innerHTML = subs.map(s => {
-      const cycle = s.cycle === 'yearly' ? 'yearly' : 'monthly';
+      const cycleLabel = s.renewal || s.cycle || 'monthly';
       return `<div class="sub-row">
         <div>
           <div class="sub-name">${s.name}</div>
-          <div class="sub-cycle">${cycle} · ${s.currency || activeCurrency}</div>
+          <div class="sub-cycle">${cycleLabel} · ${s.currency || activeCurrency}</div>
         </div>
         <div class="sub-amount">${fmt(s.amount, s.currency)}</div>
       </div>`;
