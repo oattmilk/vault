@@ -559,13 +559,15 @@ const defaultAccount = data.lastAccountId||allAccounts.find(a=>a.currency===defa
 const [currency,setCurrency]=useState(defaultCurrency);
 const [accountId,setAccountId]=useState(defaultAccount);
 
-// Keep accountId in sync when currency changes (and on mount if allAccounts loads later)
+// Sync accountId when currency changes or accounts list changes
 useEffect(()=>{
-const match = allAccounts.find(a=>a.id===accountId||a.id===parseInt(accountId));
-if(!match || match.currency!==currency){
-const first = allAccounts.find(a=>a.currency===currency);
-setAccountId(first?.id||””);
+if(!currency) return;
+const match = (data.eurAccounts.concat(data.idrAccounts)).find(a=>String(a.id)===String(accountId)&&a.currency===currency);
+if(!match){
+const accs = currency===“EUR”?data.eurAccounts:data.idrAccounts;
+setAccountId(accs[0]?.id||””);
 }
+// eslint-disable-next-line
 },[currency, data.eurAccounts.length, data.idrAccounts.length]);
 const [amount,setAmount]=useState(””);
 const [category,setCategory]=useState(data.lastCategory||“Food”);
