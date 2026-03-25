@@ -267,11 +267,13 @@ const inner = (
 if(t.pending && onEdit) {
 return (
 <div className=“txrow” style={{…rowStyle,cursor:“pointer”}} onClick={()=>onEdit(t)}
-onMouseEnter={e=>e.currentTarget.style.background=“rgba(255,255,255,0.03)”}
-onMouseLeave={e=>e.currentTarget.style.background=“transparent”}>
-{inner}
-</div>
+
+```
+    {inner}
+  </div>
 );
+```
+
 }
 
 return <div className="txrow" style={rowStyle}>{inner}</div>;
@@ -828,10 +830,10 @@ fontSize:11,fontFamily:“var(–font)”,cursor:“pointer”,fontWeight:700,le
     )}
 
     {/* Add button always at the bottom */}
-    <div style={{marginTop:4}}>
-    <ActionBtn onClick={add} color={modeColor[mode]} disabled={!isValid}>
-      ADD {mode.toUpperCase()}
-    </ActionBtn>
+    <div style={{marginTop:showMore?16:0}}>
+      <ActionBtn onClick={add} color={modeColor[mode]} disabled={!isValid}>
+        ADD {mode.toUpperCase()}
+      </ActionBtn>
     </div>
   </FormCard>
 
@@ -1127,10 +1129,7 @@ transition:“border-color 0.2s”,
 <div onClick={()=>setOpen(o=>!o)} style={{
 display:“flex”,alignItems:“center”,gap:12,
 padding:“16px 18px”,cursor:“pointer”,
-}}
-onMouseEnter={e=>e.currentTarget.style.background=“rgba(255,255,255,0.02)”}
-onMouseLeave={e=>e.currentTarget.style.background=“transparent”}
->
+}}>
 <div style={{flex:1,minWidth:0}}>
 <div style={{fontSize:10,fontWeight:700,letterSpacing:“0.14em”,color:open?ac:“var(–muted)”}}>{title}</div>
 {summary&&<div style={{fontSize:11,color:“var(–muted)”,marginTop:3}}>{summary}</div>}
