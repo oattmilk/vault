@@ -1375,11 +1375,240 @@ function AccountCard({acc,fmt,freeToSpend,accGoals,upd,data,updGoalSaved,delGoal
   );
 }
 
-function PocketRow() { return null; }
-function InvestCard() { return null; }
-function AddAccountModal() { return null; }
-function AddInvestModal() { return null; }
-function SettingsBtn() { return <button>m</button>; }
+function PocketRow({g,fmt,updGoalSaved,delGoal,allPockets}) {
+  var [mode,setMode]=useState(null);
+  var [val,setVal]=useState("");
+  var [moveTo,setMoveTo]=useState("free");
+  var isSaving=g.type==="saving";
+  var pct=isSaving&&g.target>0?(g.saved/g.target)*100:0;
+
+  var confirm=function(){
+    var v=parseFloat(val);
+    if(!isNaN(v)&&v>0){
+      if(mode==="topup") updGoalSaved(g.id,g.saved+v);
+      else if(mode==="move"){
+        updGoalSaved(g.id,g.saved-v);
+        if(moveTo!=="free"){
+          var dest=allPockets.find(p=>String(p.id)===String(moveTo));
+          if(dest) updGoalSaved(dest.id,dest.saved+v);
+        }
+      }
+    }
+    setVal(""); setMode(null); setMoveTo("free");
+  };
+
+  return (
+    <div style={{borderBottom:"1px solid var(--b1)",background:g.saved<0?"rgba(248,113,113,0.03)":"transparent"}}>
+      <div style={{padding:"12px 16px"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:isSaving&&g.target>0?8:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:16}}>{g.emoji}</span>
+            <span style={{fontSize:13,fontWeight:600,color:"var(--fg)"}}>{g.name}</span>
+            <span style={{fontSize:9,padding:"2px 6px",borderRadius:4,background:isSaving?"rgba(96,165,250,0.1)":"rgba(16,185,129,0.1)",color:isSaving?"var(--blue)":"var(--green)",fontWeight:600}}>{isSaving?"SAVE":"SPEND"}</span>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <span style={{fontSize:14,fontWeight:700,color:g.saved<0?"var(--red)":isSaving?"var(--green)":"var(--green)"}}>{fmt(g.saved)}</span>
+            <MenuBtn items={[
+              {label:"Top up",action:function(){setMode("topup");}},
+              {label:"Move",action:function(){setMode("move");}},
+              {label:"Delete",danger:true,action:function(){delGoal(g.id);}},
+            ]}/>
+          </div>
+        </div>
+        {isSaving&&g.target>0&&(
+          <React.Fragment>
+            <ProgressBar pct={Math.min(pct,100)} color={pct>=100?"var(--acc)":"var(--green)"}/>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:5}}>
+              <span style={{fontSize:10,color:"var(--muted)"}}>{pct.toFixed(0)+"%"}</span>
+              <span style={{fontSize:10,color:"var(--muted)"}}>{"goal: "+fmt(g.target)}</span>
+            </div>
+          </React.Fragment>
+        )}
+        {g.saved<0&&!mode&&(
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:8,padding:"7px 10px",borderRadius:8,background:"rgba(248,113,113,0.08)"}}>
+            <span style={{fontSize:11,color:"var(--red)"}}>Cover this?</span>
+            <button onClick={()=>setMode("topup")} style={{fontSize:11,color:"var(--acc)",background:"none",border:"1px solid var(--acc)",borderRadius:6,padding:"3px 10px",cursor:"pointer",fontFamily:"var(--font)"}}>+ Add</button>
+          </div>
+        )}
+      </div>
+      {mode&&(
+        <div style={{padding:"0 16px 12px",display:"flex",flexDirection:"column",gap:8}}>
+          {mode==="move"&&(
+            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+              <PillBtn small active={moveTo==="free"} onClick={()=>setMoveTo("free")}>Free</PillBtn>
+              {allPockets.filter(p=>p.id!==g.id).map(p=>(
+                <PillBtn small key={p.id} active={String(moveTo)===String(p.id)} onClick={()=>setMoveTo(String(p.id))} color="var(--green)">{p.emoji} {p.name}</PillBtn>
+              ))}
+            </div>
+          )}
+          <div style={{display:"flex",gap:6}}>
+            <NumInput value={val} onChange={v=>setVal(v)} placeholder="Amount" style={{...IS,flex:1,padding:"9px 12px"}}/>
+            <button onClick={confirm} style={{padding:"0 16px",borderRadius:10,border:"none",background:mode==="topup"?"var(--acc)":"var(--green)",color:"#000",fontSize:12,fontWeight:700,cursor:"pointer"}}>OK</button>
+            <button onClick={()=>{setVal("");setMode(null);}} style={{padding:"0 12px",borderRadius:10,border:"1px solid var(--b2)",background:"transparent",color:"var(--muted)",fontSize:12,cursor:"pointer"}}>x</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InvestCard({inv,upd,investments}) {
+  var [showEdit,setShowEdit]=useState(false);
+  var [editForm,setEditForm]=useState({name:inv.name,type:inv.type,totalInvested:inv.totalInvested,currentValue:inv.currentValue,notes:inv.notes||""});
+  var fmt=inv.currency==="IDR"?fmtIDR:fmtEUR;
+  var g=(parseFloat(inv.currentValue)||0)-(parseFloat(inv.totalInvested)||0);
+  var p=(parseFloat(inv.totalInvested)||0)>0?(g/(parseFloat(inv.totalInvested)||1))*100:0;
+
+  var saveEdit=function(){
+    upd("investments",investments.map(i=>i.id===inv.id?{...inv,name:editForm.name,type:editForm.type,totalInvested:parseFloat(editForm.totalInvested)||0,currentValue:parseFloat(editForm.currentValue)||0,notes:editForm.notes,lastUpdated:todayStr()}:i));
+    setShowEdit(false);
+  };
+
+  return (
+    <div style={{background:"var(--s1)",borderRadius:14,padding:"14px 16px",border:"1px solid var(--b1)"}}>
+      <Modal show={showEdit} onClose={()=>setShowEdit(false)} title="Edit Investment">
+        <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+          <Field label="NAME"><input value={editForm.name} onChange={e=>setEditForm(f=>({...f,name:e.target.value}))} style={IS}/></Field>
+          <Field label="TYPE">
+            <select value={editForm.type} onChange={e=>setEditForm(f=>({...f,type:e.target.value}))} style={IS}>
+              {["ETF","Stock","Crypto","Bond","Fund","Other"].map(t=><option key={t}>{t}</option>)}
+            </select>
+          </Field>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <Field label="INVESTED"><NumInput value={editForm.totalInvested} onChange={v=>setEditForm(f=>({...f,totalInvested:v}))} style={IS}/></Field>
+            <Field label="CURRENT VALUE"><NumInput value={editForm.currentValue} onChange={v=>setEditForm(f=>({...f,currentValue:v}))} style={IS}/></Field>
+          </div>
+          <Field label="NOTES"><input placeholder="optional" value={editForm.notes} onChange={e=>setEditForm(f=>({...f,notes:e.target.value}))} style={IS}/></Field>
+        </div>
+        <ActionBtn onClick={saveEdit}>SAVE CHANGES</ActionBtn>
+      </Modal>
+
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+        <div style={{flex:1}}>
+          <div style={{fontSize:14,fontWeight:600,color:"var(--fg)"}}>{inv.name}</div>
+          <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{inv.type} · {inv.currency}</div>
+        </div>
+        <div style={{textAlign:"right",marginRight:4}}>
+          <div style={{fontSize:16,fontWeight:700,color:"var(--green)"}}>{fmt(parseFloat(inv.currentValue)||0)}</div>
+          <div style={{fontSize:11,color:g>=0?"var(--green)":"var(--red)",marginTop:2}}>{g>=0?"+":""}{fmt(g)} ({p>=0?"+":""}{p.toFixed(1)+"%"})</div>
+        </div>
+        <MenuBtn items={[
+          {label:"Edit",action:function(){setEditForm({name:inv.name,type:inv.type,totalInvested:inv.totalInvested,currentValue:inv.currentValue,notes:inv.notes||""});setShowEdit(true);}},
+          {label:"Delete",danger:true,action:function(){upd("investments",investments.filter(i=>i.id!==inv.id));}},
+        ]}/>
+      </div>
+    </div>
+  );
+}
+
+function AddAccountModal({show,onClose,data,upd}) {
+  var [form,setForm]=useState({name:"",balance:"",currency:"EUR",rate:"",note:""});
+
+  var add=function(){
+    if(!form.name) return;
+    var acc={id:Date.now(),name:form.name,balance:parseFloat(form.balance)||0,rate:parseFloat(form.rate)||0,note:form.note};
+    if(form.currency==="EUR") upd("eurAccounts",[...data.eurAccounts,acc]);
+    else upd("idrAccounts",[...data.idrAccounts,acc]);
+    setForm({name:"",balance:"",currency:"EUR",rate:"",note:""});
+    onClose();
+  };
+
+  return (
+    <Modal show={show} onClose={onClose} title="New Account">
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {["EUR","IDR"].map(c=><PillBtn key={c} active={form.currency===c} onClick={()=>setForm(f=>({...f,currency:c}))}>{c}</PillBtn>)}
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+        <Field label="NAME"><input placeholder="e.g. ING Checking" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} style={IS}/></Field>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+          <Field label="BALANCE"><NumInput placeholder="0" value={form.balance} onChange={v=>setForm(f=>({...f,balance:v}))} style={IS}/></Field>
+          <Field label="INTEREST %"><NumInput placeholder="0" value={form.rate} onChange={v=>setForm(f=>({...f,rate:v}))} style={IS}/></Field>
+        </div>
+        <Field label="NOTE"><input placeholder="optional" value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))} style={IS}/></Field>
+      </div>
+      <ActionBtn onClick={add} disabled={!form.name}>ADD ACCOUNT</ActionBtn>
+    </Modal>
+  );
+}
+
+function AddInvestModal({show,onClose,data,upd}) {
+  var [form,setForm]=useState({name:"",type:"ETF",currency:"EUR",totalInvested:"",currentValue:"",monthlyAmount:"",sparplanDay:"1",notes:""});
+
+  var add=function(){
+    if(!form.name) return;
+    var inv={id:Date.now(),...form,totalInvested:parseFloat(form.totalInvested)||0,currentValue:parseFloat(form.currentValue)||parseFloat(form.totalInvested)||0,monthlyAmount:parseFloat(form.monthlyAmount)||0,sparplanDay:parseInt(form.sparplanDay)||1,lastUpdated:todayStr()};
+    upd("investments",[...(data.investments||[]),inv]);
+    setForm({name:"",type:"ETF",currency:"EUR",totalInvested:"",currentValue:"",monthlyAmount:"",sparplanDay:"1",notes:""});
+    onClose();
+  };
+
+  return (
+    <Modal show={show} onClose={onClose} title="New Investment">
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {["EUR","IDR"].map(c=><PillBtn key={c} active={form.currency===c} onClick={()=>setForm(f=>({...f,currency:c}))}>{c}</PillBtn>)}
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+        <Field label="NAME"><input placeholder="e.g. VWCE" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} style={IS}/></Field>
+        <Field label="TYPE">
+          <select value={form.type} onChange={e=>setForm(f=>({...f,type:e.target.value}))} style={IS}>
+            {["ETF","Stock","Crypto","Bond","Fund","Other"].map(t=><option key={t}>{t}</option>)}
+          </select>
+        </Field>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+          <Field label="INVESTED"><NumInput placeholder="0" value={form.totalInvested} onChange={v=>setForm(f=>({...f,totalInvested:v}))} style={IS}/></Field>
+          <Field label="CURRENT VALUE"><NumInput placeholder="0" value={form.currentValue} onChange={v=>setForm(f=>({...f,currentValue:v}))} style={IS}/></Field>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+          <Field label="MONTHLY (SPARPLAN)"><NumInput placeholder="0" value={form.monthlyAmount} onChange={v=>setForm(f=>({...f,monthlyAmount:v}))} style={IS}/></Field>
+          <Field label="DAY OF MONTH"><input type="number" min="1" max="28" value={form.sparplanDay} onChange={e=>setForm(f=>({...f,sparplanDay:e.target.value}))} style={IS}/></Field>
+        </div>
+        <Field label="NOTES"><input placeholder="optional" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} style={IS}/></Field>
+      </div>
+      <ActionBtn onClick={add} color="var(--green)" disabled={!form.name}>ADD INVESTMENT</ActionBtn>
+    </Modal>
+  );
+}
+
+function SettingsBtn({data,upd}) {
+  var [show,setShow]=useState(false);
+  var [confirmReset,setConfirmReset]=useState(false);
+  var [showCategories,setShowCategories]=useState(false);
+
+  var exportData=function(){
+    var json=JSON.stringify(data,null,2);
+    navigator.clipboard.writeText(json).then(function(){alert("Data copied to clipboard!");}).catch(function(){var w=window.open("","_blank");w.document.write("<pre>"+json+"</pre>");});
+    setShow(false);
+  };
+
+  return (
+    <div style={{position:"relative"}}>
+      <button onClick={()=>setShow(s=>!s)} style={{background:"none",border:"none",color:"var(--muted)",fontSize:18,cursor:"pointer",padding:"4px",lineHeight:1}}>m</button>
+      {show&&(
+        <React.Fragment>
+          <div onClick={()=>setShow(false)} style={{position:"fixed",inset:0,zIndex:40}}/>
+          <div style={{position:"absolute",left:0,top:"calc(100% + 8px)",background:"var(--s1)",border:"1px solid var(--b1)",borderRadius:14,zIndex:50,minWidth:200,boxShadow:"0 8px 32px rgba(0,0,0,0.5)",overflow:"hidden"}}>
+            <button onClick={()=>{setShow(false);setShowCategories(true);}} style={{display:"block",width:"100%",padding:"13px 16px",border:"none",borderBottom:"1px solid var(--b1)",background:"transparent",color:"var(--fg)",fontSize:13,fontFamily:"var(--font)",cursor:"pointer",textAlign:"left",fontWeight:500}}>Manage Categories</button>
+            <button onClick={exportData} style={{display:"block",width:"100%",padding:"13px 16px",border:"none",borderBottom:"1px solid var(--b1)",background:"transparent",color:"var(--fg)",fontSize:13,fontFamily:"var(--font)",cursor:"pointer",textAlign:"left",fontWeight:500}}>Export Data</button>
+            <button onClick={()=>{setShow(false);setConfirmReset(true);}} style={{display:"block",width:"100%",padding:"13px 16px",border:"none",background:"transparent",color:"var(--red)",fontSize:13,fontFamily:"var(--font)",cursor:"pointer",textAlign:"left",fontWeight:500}}>Reset Data</button>
+          </div>
+        </React.Fragment>
+      )}
+
+      <ManageCategoriesModal show={showCategories} onClose={()=>setShowCategories(false)} data={data} upd={upd}/>
+
+      <Modal show={confirmReset} onClose={()=>setConfirmReset(false)} title="Reset All Data?">
+        <div style={{fontSize:13,color:"var(--muted)",marginBottom:20,textAlign:"center",lineHeight:1.7}}>
+          This will delete all accounts, transactions, debts, subscriptions and investments. This cannot be undone.
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>{localStorage.clear();window.location.reload();}} style={{flex:1,padding:"13px",borderRadius:10,border:"none",background:"var(--red)",color:"#fff",fontSize:12,fontFamily:"var(--font)",cursor:"pointer",fontWeight:700}}>DELETE EVERYTHING</button>
+          <button onClick={()=>setConfirmReset(false)} style={{flex:1,padding:"13px",borderRadius:10,border:"1px solid var(--b2)",background:"transparent",color:"var(--muted)",fontSize:12,fontFamily:"var(--font)",cursor:"pointer"}}>CANCEL</button>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
 function ManageCategoriesModal() { return null; }
 ReactDOM.createRoot(document.getElementById("root")).render(<Vault />);
 
