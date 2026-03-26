@@ -216,7 +216,7 @@ function FormCard({children}) {
   );
 }
 
-// Bottom action sheet for card-level actions (Edit / Delete)
+// Centered floating card for card-level actions (Edit / Delete)
 function CardActionSheet({show, onClose, title, onEdit, onDelete, editLabel, deleteLabel}) {
   if(!show) return null;
   return (
@@ -224,60 +224,59 @@ function CardActionSheet({show, onClose, title, onEdit, onDelete, editLabel, del
       onClick={onClose}
       style={{
         position:"fixed",inset:0,
-        background:"rgba(0,0,0,0.6)",
-        backdropFilter:"blur(6px)",
+        background:"rgba(0,0,0,0.75)",
+        backdropFilter:"blur(8px)",
         zIndex:200,
         display:"flex",
-        alignItems:"flex-end",
+        alignItems:"center",
         justifyContent:"center",
+        padding:"20px 16px",
       }}
     >
       <div
         onClick={e=>e.stopPropagation()}
         style={{
           width:"100%",
-          maxWidth:430,
+          maxWidth:320,
           background:"linear-gradient(160deg, var(--s1) 0%, var(--bg) 100%)",
-          borderRadius:"22px 22px 0 0",
-          padding:"12px 16px 36px",
+          borderRadius:22,
+          padding:"24px 20px 20px",
           border:"1px solid var(--b1)",
-          borderBottom:"none",
-          boxShadow:"0 -8px 40px rgba(0,0,0,0.5)",
+          boxShadow:"0 24px 64px rgba(0,0,0,0.6)",
         }}
       >
-        <div style={{width:36,height:3,background:"var(--b2)",borderRadius:2,margin:"0 auto 18px"}}/>
         {title&&(
-          <div style={{fontSize:13,fontWeight:600,color:"var(--muted)",textAlign:"center",marginBottom:16,letterSpacing:"0.02em"}}>{title}</div>
+          <div style={{fontSize:15,fontWeight:700,color:"var(--fg)",textAlign:"center",marginBottom:20,letterSpacing:"-0.2px"}}>{title}</div>
         )}
         {onEdit&&(
           <button
             onClick={()=>{onEdit();onClose();}}
             style={{
-              display:"block",width:"100%",padding:"16px",
-              borderRadius:14,border:"1px solid var(--b2)",
+              display:"block",width:"100%",padding:"14px",
+              borderRadius:12,border:"1px solid var(--b2)",
               background:"var(--s2)",color:"var(--fg)",
               fontSize:14,fontFamily:"var(--font)",cursor:"pointer",
-              fontWeight:600,marginBottom:10,
-              textAlign:"center",letterSpacing:"0.01em",
+              fontWeight:600,marginBottom:8,
+              textAlign:"center",
             }}
           >{editLabel||"Edit"}</button>
         )}
         <button
           onClick={()=>{onDelete();onClose();}}
           style={{
-            display:"block",width:"100%",padding:"16px",
-            borderRadius:14,border:"1px solid rgba(248,113,113,0.25)",
+            display:"block",width:"100%",padding:"14px",
+            borderRadius:12,border:"1px solid rgba(248,113,113,0.25)",
             background:"rgba(248,113,113,0.07)",color:"var(--red)",
             fontSize:14,fontFamily:"var(--font)",cursor:"pointer",
-            fontWeight:600,marginBottom:10,
-            textAlign:"center",letterSpacing:"0.01em",
+            fontWeight:600,marginBottom:8,
+            textAlign:"center",
           }}
         >{deleteLabel||"Delete"}</button>
         <button
           onClick={onClose}
           style={{
-            display:"block",width:"100%",padding:"14px",
-            borderRadius:14,border:"none",
+            display:"block",width:"100%",padding:"12px",
+            borderRadius:12,border:"none",
             background:"transparent",color:"var(--muted)",
             fontSize:13,fontFamily:"var(--font)",cursor:"pointer",
             textAlign:"center",
