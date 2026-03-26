@@ -216,6 +216,78 @@ function FormCard({children}) {
   );
 }
 
+// Bottom action sheet for card-level actions (Edit / Delete)
+function CardActionSheet({show, onClose, title, onEdit, onDelete, editLabel, deleteLabel}) {
+  if(!show) return null;
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position:"fixed",inset:0,
+        background:"rgba(0,0,0,0.6)",
+        backdropFilter:"blur(6px)",
+        zIndex:200,
+        display:"flex",
+        alignItems:"flex-end",
+        justifyContent:"center",
+      }}
+    >
+      <div
+        onClick={e=>e.stopPropagation()}
+        style={{
+          width:"100%",
+          maxWidth:430,
+          background:"linear-gradient(160deg, var(--s1) 0%, var(--bg) 100%)",
+          borderRadius:"22px 22px 0 0",
+          padding:"12px 16px 36px",
+          border:"1px solid var(--b1)",
+          borderBottom:"none",
+          boxShadow:"0 -8px 40px rgba(0,0,0,0.5)",
+        }}
+      >
+        <div style={{width:36,height:3,background:"var(--b2)",borderRadius:2,margin:"0 auto 18px"}}/>
+        {title&&(
+          <div style={{fontSize:13,fontWeight:600,color:"var(--muted)",textAlign:"center",marginBottom:16,letterSpacing:"0.02em"}}>{title}</div>
+        )}
+        {onEdit&&(
+          <button
+            onClick={()=>{onEdit();onClose();}}
+            style={{
+              display:"block",width:"100%",padding:"16px",
+              borderRadius:14,border:"1px solid var(--b2)",
+              background:"var(--s2)",color:"var(--fg)",
+              fontSize:14,fontFamily:"var(--font)",cursor:"pointer",
+              fontWeight:600,marginBottom:10,
+              textAlign:"center",letterSpacing:"0.01em",
+            }}
+          >{editLabel||"Edit"}</button>
+        )}
+        <button
+          onClick={()=>{onDelete();onClose();}}
+          style={{
+            display:"block",width:"100%",padding:"16px",
+            borderRadius:14,border:"1px solid rgba(248,113,113,0.25)",
+            background:"rgba(248,113,113,0.07)",color:"var(--red)",
+            fontSize:14,fontFamily:"var(--font)",cursor:"pointer",
+            fontWeight:600,marginBottom:10,
+            textAlign:"center",letterSpacing:"0.01em",
+          }}
+        >{deleteLabel||"Delete"}</button>
+        <button
+          onClick={onClose}
+          style={{
+            display:"block",width:"100%",padding:"14px",
+            borderRadius:14,border:"none",
+            background:"transparent",color:"var(--muted)",
+            fontSize:13,fontFamily:"var(--font)",cursor:"pointer",
+            textAlign:"center",
+          }}
+        >Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 function TxRow({t,onDelete,onEdit,compact}) {
   const isInc = t.type==="income";
   const fmt = t.currency==="IDR"?fmtIDR:fmtEUR;
@@ -238,9 +310,6 @@ function TxRow({t,onDelete,onEdit,compact}) {
       <div style={{fontSize:13,fontWeight:700,color:color,whiteSpace:"nowrap",flexShrink:0}}>
         {isInc?"+":"-"}{fmt(t.amount)}
       </div>
-      {t.pending && onEdit && (
-        <button onClick={()=>onEdit(t)} style={{background:"none",border:"none",color:"var(--acc)",fontSize:14,cursor:"pointer",lineHeight:1,padding:"2px 4px",flexShrink:0}}>✎</button>
-      )}
       {onDelete && (
         <button onClick={()=>onDelete(t.id)} style={{background:"none",border:"none",color:"var(--dim)",fontSize:20,cursor:"pointer",lineHeight:1,padding:"2px 4px",flexShrink:0}}>×</button>
       )}
@@ -421,7 +490,7 @@ function Vault() {
       fontFamily:"var(--font)",background:"var(--bg)",
       minHeight:"100vh",color:"var(--fg)",maxWidth:430,margin:"0 auto",paddingBottom:100,
     }}>
-      <style>{"@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');*{box-sizing:border-box;margin:0;padding:0;}::-webkit-scrollbar{width:0;}input,select{outline:none;color-scheme:dark;}input:focus,select:focus{border-color:var(--acc)!important;box-shadow:0 0 0 3px rgba(196,181,253,0.1)!important;}select option{background:var(--s2);}select{border-radius:12px;}.txrow:last-child{border-bottom:none!important;}@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}.au{animation:fadeUp 0.25s ease forwards;}input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.5);}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}input[type=number]{-moz-appearance:textfield;}button:active{transform:scale(0.97);}"}</style>
+      <style>{"@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');*{box-sizing:border-box;margin:0;padding:0;}::-webkit-scrollbar{width:0;}input,select{outline:none;color-scheme:dark;}input:focus,select:focus{border-color:var(--acc)!important;box-shadow:0 0 0 3px rgba(196,181,253,0.1)!important;}select option{background:var(--s2);}select{border-radius:12px;}.txrow:last-child{border-bottom:none!important;}@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}.au{animation:fadeUp 0.25s ease forwards;}input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.5);}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}input[type=number]{-moz-appearance:textfield;}button:active{transform:scale(0.97);}.clickable-card{cursor:pointer;transition:background 0.15s,border-color 0.15s;}.clickable-card:active{filter:brightness(1.1);}"}</style>
 
       <div style={{
         padding:"16px 20px 14px",
@@ -493,23 +562,6 @@ function Track({data,upd,eurAccTotal,idrAccTotal}) {
   const [toAccountId,setToAccountId]=useState("");
   const [pocketId,setPocketId]=useState("");
   const [debtId,setDebtId]=useState("");
-  const [editTx,setEditTx]=useState(null);
-  const [showEditTx,setShowEditTx]=useState(false);
-
-  const openEdit=(t)=>{ setEditTx(t); setShowEditTx(true); };
-  const closeEdit=()=>{ setShowEditTx(false); setEditTx(null); };
-
-  const saveEditTx=(form)=>{
-    upd("transactions",data.transactions.map(t=>
-      t.id===editTx.id?{...t,amount:parseFloat(form.amount)||t.amount,date:form.date,note:form.note,category:form.category}:t
-    ));
-    closeEdit();
-  };
-
-  const delPending=(id)=>{
-    upd("transactions",data.transactions.filter(t=>t.id!==id));
-    closeEdit();
-  };
 
   const allCats=data.categories||[];
   const expCats=allCats.filter(c=>c.type==="expense"||c.type==="system").map(c=>c.name);
@@ -629,15 +681,6 @@ function Track({data,upd,eurAccTotal,idrAccTotal}) {
 
   return (
     <div>
-      <EditPendingModal
-        show={showEditTx}
-        tx={editTx}
-        onClose={closeEdit}
-        onSave={saveEditTx}
-        onDelete={delPending}
-        categories={data.categories}
-      />
-
       <FormCard>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:16}}>
           {[["expense","↓ OUT"],["income","↑ IN"],["transfer","⇄ MOVE"]].map(function(pair){
@@ -762,7 +805,7 @@ function Track({data,upd,eurAccTotal,idrAccTotal}) {
       {upcomingTx.length>0&&(
         <Section title="UPCOMING" subtitle={upcomingTx.length+" scheduled"}>
           <div style={{background:"var(--s1)",borderRadius:16,padding:"2px 16px",border:"1px solid rgba(251,191,36,0.15)"}}>
-            {upcomingTx.map(t=><TxRow key={t.id} t={t} onDelete={del} onEdit={openEdit} compact/>)}
+            {upcomingTx.map(t=><TxRow key={t.id} t={t} onDelete={del} compact/>)}
           </div>
         </Section>
       )}
@@ -813,7 +856,7 @@ function Home({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurInvTo
     <div>
       {negativePockets.length>0&&(
         <div style={{background:"rgba(248,113,113,0.06)",border:"1px solid rgba(248,113,113,0.2)",borderRadius:14,padding:"12px 16px",marginBottom:18}}>
-          <div style={{fontSize:11,color:"var(--red)",fontWeight:700,marginBottom:6,letterSpacing:"0.06em"}}>⚠️ POCKETS NEED ATTENTION</div>
+          <div style={{fontSize:11,color:"var(--red)",fontWeight:700,marginBottom:6,letterSpacing:"0.06em"}}>POCKETS NEED ATTENTION</div>
           {negativePockets.map(g=>(
             <div key={g.id} style={{fontSize:12,color:"var(--red)",marginBottom:2}}>{g.emoji} {g.name}: {g.currency==="IDR"?fmtIDR(g.saved):fmtEUR(g.saved)}</div>
           ))}
@@ -1153,30 +1196,8 @@ function VaultTab({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurI
         ):(
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
             {debts.map(function(d){
-              var fmt=d.currency==="IDR"?fmtIDR:fmtEUR;
-              var pct=d.total>0?((d.total-d.remaining)/d.total)*100:0;
-              var _tm=d.totalMonths||(d.total>0&&d.monthly>0?Math.round(d.total/d.monthly):0);
-              var dynamicMonthly=_tm>0?d.remaining/_tm:d.monthly;
               return (
-                <div key={d.id} style={{background:"linear-gradient(160deg,var(--s1),var(--s2))",borderRadius:16,padding:16,border:"1px solid var(--b1)"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
-                    <div>
-                      <div style={{fontSize:14,fontWeight:600,color:"var(--fg)"}}>{d.name}</div>
-                      <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{pct.toFixed(0)}% paid</div>
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <div style={{fontSize:16,fontWeight:700,color:"var(--red)"}}>{fmt(d.remaining)}</div>
-                      <MenuBtn items={[{label:"Delete",danger:true,action:function(){delDebt(d.id);}}]}/>
-                    </div>
-                  </div>
-                  <ProgressBar pct={pct} color="var(--green)"/>
-                  {dynamicMonthly>0&&(
-                    <div style={{display:"flex",justifyContent:"space-between",marginTop:10,fontSize:11,color:"var(--muted)"}}>
-                      <span>{fmt(dynamicMonthly)}/mo</span>
-                      <span>{_tm} months</span>
-                    </div>
-                  )}
-                </div>
+                <DebtCard key={d.id} d={d} onDelete={()=>delDebt(d.id)}/>
               );
             })}
           </div>
@@ -1191,16 +1212,8 @@ function VaultTab({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurI
         ):(
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {subs.map(function(s){
-              var fmt=s.currency==="IDR"?fmtIDR:fmtEUR;
               return (
-                <div key={s.id} style={{background:"linear-gradient(160deg,var(--s1),var(--s2))",borderRadius:14,padding:"14px 16px",border:"1px solid var(--b1)",display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:600,color:"var(--fg)"}}>{s.name}</div>
-                    <div style={{fontSize:11,color:"var(--muted)",marginTop:1}}>{s.renewal} · {s.accountName}</div>
-                  </div>
-                  <div style={{fontSize:15,fontWeight:700,color:"var(--orange)"}}>{fmt(s.amount)}</div>
-                  <MenuBtn items={[{label:"Delete",danger:true,action:function(){delSub(s.id);}}]}/>
-                </div>
+                <SubCard key={s.id} s={s} onDelete={()=>delSub(s.id)}/>
               );
             })}
           </div>
@@ -1277,9 +1290,80 @@ function VaultTab({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurI
   );
 }
 
+// Debt card — fully clickable, opens action sheet
+function DebtCard({d,onDelete}) {
+  var [showSheet,setShowSheet]=useState(false);
+  var fmt=d.currency==="IDR"?fmtIDR:fmtEUR;
+  var pct=d.total>0?((d.total-d.remaining)/d.total)*100:0;
+  var _tm=d.totalMonths||(d.total>0&&d.monthly>0?Math.round(d.total/d.monthly):0);
+  var dynamicMonthly=_tm>0?d.remaining/_tm:d.monthly;
+
+  return (
+    <React.Fragment>
+      <div
+        className="clickable-card"
+        onClick={()=>setShowSheet(true)}
+        style={{background:"linear-gradient(160deg,var(--s1),var(--s2))",borderRadius:16,padding:16,border:"1px solid var(--b1)"}}
+      >
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+          <div>
+            <div style={{fontSize:14,fontWeight:600,color:"var(--fg)"}}>{d.name}</div>
+            <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{pct.toFixed(0)}% paid</div>
+          </div>
+          <div style={{fontSize:16,fontWeight:700,color:"var(--red)"}}>{fmt(d.remaining)}</div>
+        </div>
+        <ProgressBar pct={pct} color="var(--green)"/>
+        {dynamicMonthly>0&&(
+          <div style={{display:"flex",justifyContent:"space-between",marginTop:10,fontSize:11,color:"var(--muted)"}}>
+            <span>{fmt(dynamicMonthly)}/mo</span>
+            <span>{_tm} months</span>
+          </div>
+        )}
+      </div>
+      <CardActionSheet
+        show={showSheet}
+        onClose={()=>setShowSheet(false)}
+        title={d.name}
+        onDelete={onDelete}
+        deleteLabel="Delete debt"
+      />
+    </React.Fragment>
+  );
+}
+
+// Subscription card — fully clickable, opens action sheet
+function SubCard({s,onDelete}) {
+  var [showSheet,setShowSheet]=useState(false);
+  var fmt=s.currency==="IDR"?fmtIDR:fmtEUR;
+
+  return (
+    <React.Fragment>
+      <div
+        className="clickable-card"
+        onClick={()=>setShowSheet(true)}
+        style={{background:"linear-gradient(160deg,var(--s1),var(--s2))",borderRadius:14,padding:"14px 16px",border:"1px solid var(--b1)",display:"flex",alignItems:"center",gap:12}}
+      >
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:13,fontWeight:600,color:"var(--fg)"}}>{s.name}</div>
+          <div style={{fontSize:11,color:"var(--muted)",marginTop:1}}>{s.renewal} · {s.accountName}</div>
+        </div>
+        <div style={{fontSize:15,fontWeight:700,color:"var(--orange)"}}>{fmt(s.amount)}</div>
+      </div>
+      <CardActionSheet
+        show={showSheet}
+        onClose={()=>setShowSheet(false)}
+        title={s.name}
+        onDelete={onDelete}
+        deleteLabel="Delete subscription"
+      />
+    </React.Fragment>
+  );
+}
+
 function AccountCard({acc,fmt,freeToSpend,accGoals,upd,data,updGoalSaved,delGoal,goalForm,setGoalForm,addGoal}) {
   var [showPocketForm,setShowPocketForm]=useState(false);
   var [showEdit,setShowEdit]=useState(false);
+  var [showSheet,setShowSheet]=useState(false);
   var [editForm,setEditForm]=useState({name:acc.name,balance:acc.balance,rate:acc.rate||"",note:acc.note||""});
   var isEUR=acc.currency==="EUR";
 
@@ -1293,6 +1377,11 @@ function AccountCard({acc,fmt,freeToSpend,accGoals,upd,data,updGoalSaved,delGoal
     if(isEUR) upd("eurAccounts",data.eurAccounts.map(a=>a.id===acc.id?updated:a));
     else upd("idrAccounts",data.idrAccounts.map(a=>a.id===acc.id?updated:a));
     setShowEdit(false);
+  };
+
+  var openEdit=function(){
+    setEditForm({name:acc.name,balance:acc.balance,rate:acc.rate||"",note:acc.note||""});
+    setShowEdit(true);
   };
 
   return (
@@ -1309,7 +1398,22 @@ function AccountCard({acc,fmt,freeToSpend,accGoals,upd,data,updGoalSaved,delGoal
         <ActionBtn onClick={saveEdit}>SAVE CHANGES</ActionBtn>
       </Modal>
 
-      <div style={{padding:"14px 16px",borderBottom:accGoals.length>0||showPocketForm?"1px solid var(--b1)":"none"}}>
+      <CardActionSheet
+        show={showSheet}
+        onClose={()=>setShowSheet(false)}
+        title={acc.name}
+        onEdit={openEdit}
+        onDelete={delAcc}
+        editLabel="Edit account"
+        deleteLabel="Delete account"
+      />
+
+      {/* Clickable header area */}
+      <div
+        className="clickable-card"
+        onClick={()=>setShowSheet(true)}
+        style={{padding:"14px 16px",borderBottom:accGoals.length>0||showPocketForm?"1px solid var(--b1)":"none",borderRadius:accGoals.length>0||showPocketForm?"16px 16px 0 0":"16px"}}
+      >
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div style={{flex:1,minWidth:0}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:acc.note?4:0}}>
@@ -1320,10 +1424,7 @@ function AccountCard({acc,fmt,freeToSpend,accGoals,upd,data,updGoalSaved,delGoal
           </div>
           <div style={{display:"flex",alignItems:"center",gap:6}}>
             <span style={{fontSize:17,fontWeight:700,color:"var(--fg)"}}>{fmt(acc.balance)}</span>
-            <MenuBtn items={[
-              {label:"Edit",action:function(){setEditForm({name:acc.name,balance:acc.balance,rate:acc.rate||"",note:acc.note||""});setShowEdit(true);}},
-              {label:"Delete",danger:true,action:delAcc},
-            ]}/>
+            <span style={{fontSize:13,color:"var(--dim)"}}>›</span>
           </div>
         </div>
         {accGoals.length>0&&(
@@ -1367,7 +1468,10 @@ function AccountCard({acc,fmt,freeToSpend,accGoals,upd,data,updGoalSaved,delGoal
 
       {!showPocketForm&&(
         <div style={{padding:"10px 16px",borderTop:"1px solid var(--b1)"}}>
-          <button onClick={()=>{setShowPocketForm(true);setGoalForm(f=>({...f,accountId:acc.id,currency:acc.currency,name:"",target:"",emoji:"🛒",type:"spending"}));}} style={{background:"none",border:"none",color:"var(--acc)",fontSize:11,cursor:"pointer",fontFamily:"var(--font)",fontWeight:600,letterSpacing:"0.04em"}}>
+          <button
+            onClick={e=>{e.stopPropagation();setShowPocketForm(true);setGoalForm(f=>({...f,accountId:acc.id,currency:acc.currency,name:"",target:"",emoji:"🛒",type:"spending"}));}}
+            style={{background:"none",border:"none",color:"var(--acc)",fontSize:11,cursor:"pointer",fontFamily:"var(--font)",fontWeight:600,letterSpacing:"0.04em"}}
+          >
             + Add pocket
           </button>
         </div>
@@ -1455,6 +1559,7 @@ function PocketRow({g,fmt,updGoalSaved,delGoal,allPockets}) {
 
 function InvestCard({inv,upd,investments}) {
   var [showEdit,setShowEdit]=useState(false);
+  var [showSheet,setShowSheet]=useState(false);
   var [editForm,setEditForm]=useState({name:inv.name,type:inv.type,totalInvested:inv.totalInvested,currentValue:inv.currentValue,notes:inv.notes||""});
   var fmt=inv.currency==="IDR"?fmtIDR:fmtEUR;
   var g=(parseFloat(inv.currentValue)||0)-(parseFloat(inv.totalInvested)||0);
@@ -1465,40 +1570,57 @@ function InvestCard({inv,upd,investments}) {
     setShowEdit(false);
   };
 
-  return (
-    <div style={{background:"var(--s1)",borderRadius:14,padding:"14px 16px",border:"1px solid var(--b1)"}}>
-      <Modal show={showEdit} onClose={()=>setShowEdit(false)} title="Edit Investment">
-        <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
-          <Field label="NAME"><input value={editForm.name} onChange={e=>setEditForm(f=>({...f,name:e.target.value}))} style={IS}/></Field>
-          <Field label="TYPE">
-            <select value={editForm.type} onChange={e=>setEditForm(f=>({...f,type:e.target.value}))} style={IS}>
-              {["ETF","Stock","Crypto","Bond","Fund","Other"].map(t=><option key={t}>{t}</option>)}
-            </select>
-          </Field>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            <Field label="INVESTED"><NumInput value={editForm.totalInvested} onChange={v=>setEditForm(f=>({...f,totalInvested:v}))} style={IS}/></Field>
-            <Field label="CURRENT VALUE"><NumInput value={editForm.currentValue} onChange={v=>setEditForm(f=>({...f,currentValue:v}))} style={IS}/></Field>
-          </div>
-          <Field label="NOTES"><input placeholder="optional" value={editForm.notes} onChange={e=>setEditForm(f=>({...f,notes:e.target.value}))} style={IS}/></Field>
-        </div>
-        <ActionBtn onClick={saveEdit}>SAVE CHANGES</ActionBtn>
-      </Modal>
+  var openEdit=function(){
+    setEditForm({name:inv.name,type:inv.type,totalInvested:inv.totalInvested,currentValue:inv.currentValue,notes:inv.notes||""});
+    setShowEdit(true);
+  };
 
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-        <div style={{flex:1}}>
-          <div style={{fontSize:14,fontWeight:600,color:"var(--fg)"}}>{inv.name}</div>
-          <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{inv.type} · {inv.currency}</div>
+  return (
+    <React.Fragment>
+      <div
+        className="clickable-card"
+        onClick={()=>setShowSheet(true)}
+        style={{background:"var(--s1)",borderRadius:14,padding:"14px 16px",border:"1px solid var(--b1)"}}
+      >
+        <Modal show={showEdit} onClose={()=>setShowEdit(false)} title="Edit Investment">
+          <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+            <Field label="NAME"><input value={editForm.name} onChange={e=>setEditForm(f=>({...f,name:e.target.value}))} style={IS}/></Field>
+            <Field label="TYPE">
+              <select value={editForm.type} onChange={e=>setEditForm(f=>({...f,type:e.target.value}))} style={IS}>
+                {["ETF","Stock","Crypto","Bond","Fund","Other"].map(t=><option key={t}>{t}</option>)}
+              </select>
+            </Field>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              <Field label="INVESTED"><NumInput value={editForm.totalInvested} onChange={v=>setEditForm(f=>({...f,totalInvested:v}))} style={IS}/></Field>
+              <Field label="CURRENT VALUE"><NumInput value={editForm.currentValue} onChange={v=>setEditForm(f=>({...f,currentValue:v}))} style={IS}/></Field>
+            </div>
+            <Field label="NOTES"><input placeholder="optional" value={editForm.notes} onChange={e=>setEditForm(f=>({...f,notes:e.target.value}))} style={IS}/></Field>
+          </div>
+          <ActionBtn onClick={saveEdit}>SAVE CHANGES</ActionBtn>
+        </Modal>
+
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14,fontWeight:600,color:"var(--fg)"}}>{inv.name}</div>
+            <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{inv.type} · {inv.currency}</div>
+          </div>
+          <div style={{textAlign:"right",marginRight:8}}>
+            <div style={{fontSize:16,fontWeight:700,color:"var(--green)"}}>{fmt(parseFloat(inv.currentValue)||0)}</div>
+            <div style={{fontSize:11,color:g>=0?"var(--green)":"var(--red)",marginTop:2}}>{g>=0?"+":""}{fmt(g)} ({p>=0?"+":""}{p.toFixed(1)+"%"})</div>
+          </div>
+          <span style={{fontSize:13,color:"var(--dim)",alignSelf:"center"}}>›</span>
         </div>
-        <div style={{textAlign:"right",marginRight:4}}>
-          <div style={{fontSize:16,fontWeight:700,color:"var(--green)"}}>{fmt(parseFloat(inv.currentValue)||0)}</div>
-          <div style={{fontSize:11,color:g>=0?"var(--green)":"var(--red)",marginTop:2}}>{g>=0?"+":""}{fmt(g)} ({p>=0?"+":""}{p.toFixed(1)+"%"})</div>
-        </div>
-        <MenuBtn items={[
-          {label:"Edit",action:function(){setEditForm({name:inv.name,type:inv.type,totalInvested:inv.totalInvested,currentValue:inv.currentValue,notes:inv.notes||""});setShowEdit(true);}},
-          {label:"Delete",danger:true,action:function(){upd("investments",investments.filter(i=>i.id!==inv.id));}},
-        ]}/>
       </div>
-    </div>
+      <CardActionSheet
+        show={showSheet}
+        onClose={()=>setShowSheet(false)}
+        title={inv.name}
+        onEdit={openEdit}
+        onDelete={()=>upd("investments",investments.filter(i=>i.id!==inv.id))}
+        editLabel="Edit investment"
+        deleteLabel="Delete investment"
+      />
+    </React.Fragment>
   );
 }
 
