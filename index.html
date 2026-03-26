@@ -1013,8 +1013,368 @@ function Home({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurInvTo
   );
 }
 
-function VaultTab() { return <div>vault tab stub</div>; }
-function AccountCard() { return null; }
+function VaultTab({data,upd,eurAccTotal,idrAccTotal,eurNetWorth,idrNetWorth,eurInvTotal,idrInvTotal,eurDebtTotal,idrDebtTotal}) {
+  var goals=data.goals||[];
+  var debts=data.debts||[];
+  var subs=data.subscriptions||[];
+  var investments=data.investments||[];
+
+  var [debtForm,setDebtForm]=useState({name:"",total:"",months:"",currency:"EUR",nextDate:"",accountId:"",accountName:""});
+  var [subForm,setSubForm]=useState({name:"",amount:"",currency:"EUR",renewal:"Monthly",accountId:"",nextDate:todayStr()});
+  var [goalForm,setGoalForm]=useState({name:"",target:"",saved:"",currency:"EUR",deadline:"",emoji:"*",accountId:"",type:"spending"});
+  var [showAddAccount,setShowAddAccount]=useState(false);
+  var [showAddDebt,setShowAddDebt]=useState(false);
+  var [showAddSub,setShowAddSub]=useState(false);
+  var [showAddInvest,setShowAddInvest]=useState(false);
+
+  var allAccounts=[
+    ...data.eurAccounts.map(a=>({...a,currency:"EUR"})),
+    ...data.idrAccounts.map(a=>({...a,currency:"IDR"})),
+  ];
+
+  var addGoal=function(){
+    if(!goalForm.name) return;
+    var isSpending=goalForm.type!=="saving";
+    upd("goals",[...goals,{id:Date.now(),...goalForm,target:isSpending?0:parseFloat(goalForm.target)||0,saved:0}]);
+    setGoalForm({name:"",target:"",saved:"",currency:"EUR",deadline:"",emoji:"*",accountId:"",type:"spending"});
+  };
+  var delGoal=function(id){upd("goals",goals.filter(g=>g.id!==id));};
+  var updGoalSaved=function(id,v){upd("goals",goals.map(g=>g.id===id?{...g,saved:v}:g));};
+
+  var addDebt=function(){
+    var totalAmt=parseFloat(debtForm.total)||0;
+    var totalMonths=parseInt(debtForm.months)||0;
+    if(!debtForm.name||!totalAmt) return;
+    var monthlyAmt=totalMonths>0?totalAmt/totalMonths:0;
+    var newDebt={id:Date.now(),...debtForm,total:totalAmt,remaining:totalAmt,monthly:monthlyAmt,totalMonths:totalMonths};
+    upd("debts",[...debts,newDebt]);
+    if(newDebt.nextDate&&newDebt.monthly>0){
+      var pending=newDebt.nextDate>todayStr();
+      var acc=allAccounts.find(a=>String(a.id)===String(debtForm.accountId));
+      var tx={id:Date.now()+1,type:"expense",currency:newDebt.currency,amount:newDebt.monthly,category:"Debt",note:newDebt.name+" payment",date:newDebt.nextDate,accountId:newDebt.accountId,accountName:acc?acc.name:"",pending:pending,debtId:newDebt.id};
+      upd("transactions",[tx,...(data.transactions||[])]);
+    }
+    setDebtForm({name:"",total:"",months:"",currency:"EUR",nextDate:"",accountId:"",accountName:""});
+    setShowAddDebt(false);
+  };
+  var delDebt=function(id){
+    upd("debts",debts.filter(d=>d.id!==id));
+    upd("transactions",(data.transactions||[]).filter(t=>t.debtId!==id));
+  };
+
+  var addSub=function(){
+    if(!subForm.name||!subForm.amount||!subForm.accountId) return;
+    var acc=allAccounts.find(a=>String(a.id)===String(subForm.accountId));
+    upd("subscriptions",[...subs,{id:Date.now(),...subForm,amount:parseFloat(subForm.amount),accountName:acc?acc.name:""}]);
+    setSubForm({name:"",amount:"",currency:"EUR",renewal:"Monthly",accountId:"",nextDate:todayStr()});
+    setShowAddSub(false);
+  };
+  var delSub=function(id){
+    upd("subscriptions",subs.filter(s=>s.id!==id));
+    upd("transactions",(data.transactions||[]).filter(t=>t.subId!==id));
+  };
+
+  var subMonthlyEUR=subs.filter(s=>s.currency==="EUR").reduce(function(s,sub){
+    if(sub.renewal==="Monthly") return s+sub.amount;
+    if(sub.renewal==="Yearly") return s+sub.amount/12;
+    if(sub.renewal==="Weekly") return s+sub.amount*4.33;
+    if(sub.renewal==="Quarterly") return s+sub.amount/3;
+    return s;
+  },0);
+
+  var eurTrueNetWorth=eurNetWorth-eurDebtTotal;
+  var idrTrueNetWorth=idrNetWorth-idrDebtTotal;
+
+  var AddBtn=function(props){
+    return (
+      <button onClick={props.onClick} style={{background:"none",border:"none",color:"var(--acc)",fontSize:12,fontWeight:600,cursor:"pointer",padding:"4px 0",letterSpacing:"0.04em"}}>+ Add</button>
+    );
+  };
+
+  return (
+    <div>
+      <div style={{background:"linear-gradient(160deg,var(--s1) 0%,var(--s2) 100%)",borderRadius:22,padding:"26px 22px",marginBottom:24,border:"1px solid var(--b1)",boxShadow:"0 8px 32px rgba(0,0,0,0.2)",textAlign:"center",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",bottom:"-50%",left:"50%",transform:"translateX(-50%)",width:"70%",height:"100%",background:"radial-gradient(ellipse,rgba(16,185,129,0.1) 0%,transparent 70%)",pointerEvents:"none"}}/>
+        <div style={{fontSize:10,color:"var(--muted)",letterSpacing:"0.14em",marginBottom:10,fontWeight:700}}>NET WORTH</div>
+        <div style={{fontSize:34,fontWeight:800,color:"var(--green)",letterSpacing:"-1.5px",lineHeight:1}}>{fmtEUR(eurTrueNetWorth)}</div>
+        {idrTrueNetWorth!==0&&<div style={{fontSize:15,color:"var(--blue)",marginTop:8,fontWeight:600}}>{fmtIDR(idrTrueNetWorth)}</div>}
+        <div style={{display:"flex",justifyContent:"center",gap:24,marginTop:18,paddingTop:16,borderTop:"1px solid var(--b1)"}}>
+          <div>
+            <div style={{fontSize:9,color:"var(--muted)",letterSpacing:"0.1em",marginBottom:4}}>ASSETS</div>
+            <div style={{fontSize:14,fontWeight:700,color:"var(--fg)"}}>{fmtEUR(eurNetWorth)}</div>
+          </div>
+          <div style={{width:1,background:"var(--b1)"}}/>
+          <div>
+            <div style={{fontSize:9,color:"var(--muted)",letterSpacing:"0.1em",marginBottom:4}}>DEBTS</div>
+            <div style={{fontSize:14,fontWeight:700,color:eurDebtTotal>0?"var(--red)":"var(--fg)"}}>{eurDebtTotal>0?"-":""}{fmtEUR(eurDebtTotal)}</div>
+          </div>
+        </div>
+      </div>
+
+      <Section title="ACCOUNTS" subtitle={allAccounts.length+" account"+(allAccounts.length!==1?"s":"")} action={<AddBtn onClick={()=>setShowAddAccount(true)}/>}>
+        {allAccounts.length===0?(
+          <div style={{background:"var(--s1)",borderRadius:16,padding:32,textAlign:"center",border:"1px solid var(--b1)"}}>
+            <div style={{fontSize:13,color:"var(--muted)",marginBottom:16}}>No accounts yet</div>
+            <button onClick={()=>setShowAddAccount(true)} style={{background:"var(--acc)",border:"none",borderRadius:10,padding:"11px 22px",color:"#000",fontWeight:700,fontSize:12,cursor:"pointer"}}>Add First Account</button>
+          </div>
+        ):(
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {allAccounts.map(function(acc){
+              var accGoals=goals.filter(g=>g.accountId===acc.id);
+              var totalReserved=accGoals.reduce((s,g)=>s+Math.max(0,g.saved),0);
+              var freeToSpend=acc.balance-totalReserved;
+              return (
+                <AccountCard
+                  key={acc.id}
+                  acc={acc}
+                  fmt={acc.currency==="EUR"?fmtEUR:fmtIDR}
+                  freeToSpend={freeToSpend}
+                  accGoals={accGoals}
+                  upd={upd}
+                  data={data}
+                  updGoalSaved={updGoalSaved}
+                  delGoal={delGoal}
+                  goalForm={goalForm}
+                  setGoalForm={setGoalForm}
+                  addGoal={addGoal}
+                />
+              );
+            })}
+          </div>
+        )}
+      </Section>
+
+      <Section title="DEBTS" subtitle={debts.length>0?(debts.length+" active"):"debt-free"} action={<AddBtn onClick={()=>setShowAddDebt(true)}/>}>
+        {debts.length===0?(
+          <div style={{background:"var(--s1)",borderRadius:16,padding:20,textAlign:"center",border:"1px solid var(--b1)"}}>
+            <div style={{fontSize:13,color:"var(--muted)"}}>No active debts</div>
+          </div>
+        ):(
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {debts.map(function(d){
+              var fmt=d.currency==="IDR"?fmtIDR:fmtEUR;
+              var pct=d.total>0?((d.total-d.remaining)/d.total)*100:0;
+              var _tm=d.totalMonths||(d.total>0&&d.monthly>0?Math.round(d.total/d.monthly):0);
+              var dynamicMonthly=_tm>0?d.remaining/_tm:d.monthly;
+              return (
+                <div key={d.id} style={{background:"linear-gradient(160deg,var(--s1),var(--s2))",borderRadius:16,padding:16,border:"1px solid var(--b1)"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:600,color:"var(--fg)"}}>{d.name}</div>
+                      <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{pct.toFixed(0)}% paid</div>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{fontSize:16,fontWeight:700,color:"var(--red)"}}>{fmt(d.remaining)}</div>
+                      <MenuBtn items={[{label:"Delete",danger:true,action:function(){delDebt(d.id);}}]}/>
+                    </div>
+                  </div>
+                  <ProgressBar pct={pct} color="var(--green)"/>
+                  {dynamicMonthly>0&&(
+                    <div style={{display:"flex",justifyContent:"space-between",marginTop:10,fontSize:11,color:"var(--muted)"}}>
+                      <span>{fmt(dynamicMonthly)}/mo</span>
+                      <span>{_tm} months</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Section>
+
+      <Section title="SUBSCRIPTIONS" subtitle={subs.length>0?(fmtEUR(subMonthlyEUR)+"/mo"):"none active"} action={<AddBtn onClick={()=>setShowAddSub(true)}/>}>
+        {subs.length===0?(
+          <div style={{background:"var(--s1)",borderRadius:16,padding:20,textAlign:"center",border:"1px solid var(--b1)"}}>
+            <div style={{fontSize:13,color:"var(--muted)"}}>No subscriptions tracked</div>
+          </div>
+        ):(
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {subs.map(function(s){
+              var fmt=s.currency==="IDR"?fmtIDR:fmtEUR;
+              return (
+                <div key={s.id} style={{background:"linear-gradient(160deg,var(--s1),var(--s2))",borderRadius:14,padding:"14px 16px",border:"1px solid var(--b1)",display:"flex",alignItems:"center",gap:12}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:600,color:"var(--fg)"}}>{s.name}</div>
+                    <div style={{fontSize:11,color:"var(--muted)",marginTop:1}}>{s.renewal} · {s.accountName}</div>
+                  </div>
+                  <div style={{fontSize:15,fontWeight:700,color:"var(--orange)"}}>{fmt(s.amount)}</div>
+                  <MenuBtn items={[{label:"Delete",danger:true,action:function(){delSub(s.id);}}]}/>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Section>
+
+      <Section title="INVESTMENTS" subtitle={investments.length>0?(investments.length+" holding"+(investments.length!==1?"s":"")):"none yet"} action={<AddBtn onClick={()=>setShowAddInvest(true)}/>}>
+        {investments.length===0?(
+          <div style={{background:"var(--s1)",borderRadius:16,padding:20,textAlign:"center",border:"1px solid var(--b1)"}}>
+            <div style={{fontSize:13,color:"var(--muted)"}}>No investments tracked yet</div>
+          </div>
+        ):(
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {investments.map(inv=><InvestCard key={inv.id} inv={inv} upd={upd} investments={investments}/>)}
+          </div>
+        )}
+      </Section>
+
+      <AddAccountModal show={showAddAccount} onClose={()=>setShowAddAccount(false)} data={data} upd={upd}/>
+
+      <Modal show={showAddDebt} onClose={()=>setShowAddDebt(false)} title="Add Debt">
+        <div style={{display:"flex",gap:8,marginBottom:16}}>
+          {["EUR","IDR"].map(c=><PillBtn key={c} active={debtForm.currency===c} onClick={()=>setDebtForm(f=>({...f,currency:c}))} color="var(--red)">{c}</PillBtn>)}
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+          <Field label="NAME"><input placeholder="e.g. Car loan" value={debtForm.name} onChange={e=>setDebtForm(f=>({...f,name:e.target.value}))} style={IS}/></Field>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <Field label="TOTAL AMOUNT"><NumInput placeholder="0" value={debtForm.total} onChange={v=>setDebtForm(f=>({...f,total:v}))} style={IS}/></Field>
+            <Field label="MONTHS"><input type="number" placeholder="12" value={debtForm.months} onChange={e=>setDebtForm(f=>({...f,months:e.target.value}))} style={IS}/></Field>
+          </div>
+          {parseFloat(debtForm.total)>0&&parseInt(debtForm.months)>0&&(
+            <div style={{fontSize:12,color:"var(--acc)",padding:"8px 12px",background:"rgba(196,181,253,0.06)",borderRadius:8}}>
+              = {debtForm.currency==="IDR"?fmtIDR(parseFloat(debtForm.total)/parseInt(debtForm.months)):fmtEUR(parseFloat(debtForm.total)/parseInt(debtForm.months))}/mo
+            </div>
+          )}
+          <DatePicker label="NEXT PAYMENT" value={debtForm.nextDate} onChange={v=>setDebtForm(f=>({...f,nextDate:v}))}/>
+          <Field label="DEBIT FROM">
+            <select value={debtForm.accountId} onChange={e=>setDebtForm(f=>({...f,accountId:e.target.value}))} style={IS}>
+              <option value="">Select account...</option>
+              {allAccounts.filter(a=>a.currency===debtForm.currency).map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+          </Field>
+        </div>
+        <ActionBtn onClick={addDebt} color="var(--red)" disabled={!debtForm.name||!debtForm.total}>ADD DEBT</ActionBtn>
+      </Modal>
+
+      <Modal show={showAddSub} onClose={()=>setShowAddSub(false)} title="Add Subscription">
+        <div style={{display:"flex",gap:8,marginBottom:16}}>
+          {["EUR","IDR"].map(c=><PillBtn key={c} active={subForm.currency===c} onClick={()=>setSubForm(f=>({...f,currency:c,accountId:""}))}>{c}</PillBtn>)}
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+          <Field label="NAME"><input placeholder="e.g. Netflix" value={subForm.name} onChange={e=>setSubForm(f=>({...f,name:e.target.value}))} style={IS}/></Field>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <Field label="AMOUNT"><NumInput placeholder="9.99" value={subForm.amount} onChange={v=>setSubForm(f=>({...f,amount:v}))} style={IS}/></Field>
+            <Field label="RENEWAL">
+              <select value={subForm.renewal} onChange={e=>setSubForm(f=>({...f,renewal:e.target.value}))} style={IS}>
+                {RENEWAL.map(r=><option key={r}>{r}</option>)}
+              </select>
+            </Field>
+          </div>
+          <Field label="ACCOUNT">
+            <select value={subForm.accountId} onChange={e=>setSubForm(f=>({...f,accountId:e.target.value}))} style={IS}>
+              <option value="">Select account...</option>
+              {allAccounts.filter(a=>a.currency===subForm.currency).map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+          </Field>
+          <DatePicker label="NEXT RENEWAL" value={subForm.nextDate} onChange={v=>setSubForm(f=>({...f,nextDate:v}))}/>
+        </div>
+        <ActionBtn onClick={addSub} color="var(--orange)" disabled={!subForm.name||!subForm.amount||!subForm.accountId}>ADD SUBSCRIPTION</ActionBtn>
+      </Modal>
+
+      <AddInvestModal show={showAddInvest} onClose={()=>setShowAddInvest(false)} data={data} upd={upd}/>
+    </div>
+  );
+}
+
+function AccountCard({acc,fmt,freeToSpend,accGoals,upd,data,updGoalSaved,delGoal,goalForm,setGoalForm,addGoal}) {
+  var [showPocketForm,setShowPocketForm]=useState(false);
+  var [showEdit,setShowEdit]=useState(false);
+  var [editForm,setEditForm]=useState({name:acc.name,balance:acc.balance,rate:acc.rate||"",note:acc.note||""});
+  var isEUR=acc.currency==="EUR";
+
+  var delAcc=function(){
+    if(isEUR) upd("eurAccounts",data.eurAccounts.filter(a=>a.id!==acc.id));
+    else upd("idrAccounts",data.idrAccounts.filter(a=>a.id!==acc.id));
+  };
+
+  var saveEdit=function(){
+    var updated={...acc,name:editForm.name,balance:parseFloat(editForm.balance)||0,rate:parseFloat(editForm.rate)||0,note:editForm.note};
+    if(isEUR) upd("eurAccounts",data.eurAccounts.map(a=>a.id===acc.id?updated:a));
+    else upd("idrAccounts",data.idrAccounts.map(a=>a.id===acc.id?updated:a));
+    setShowEdit(false);
+  };
+
+  return (
+    <div style={{background:"linear-gradient(160deg,var(--s2),var(--s1))",borderRadius:16,border:"1px solid var(--b1)"}}>
+      <Modal show={showEdit} onClose={()=>setShowEdit(false)} title="Edit Account">
+        <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+          <Field label="NAME"><input value={editForm.name} onChange={e=>setEditForm(f=>({...f,name:e.target.value}))} style={IS}/></Field>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <Field label="BALANCE"><NumInput value={editForm.balance} onChange={v=>setEditForm(f=>({...f,balance:v}))} style={IS}/></Field>
+            <Field label="INTEREST %"><NumInput placeholder="0" value={editForm.rate} onChange={v=>setEditForm(f=>({...f,rate:v}))} style={IS}/></Field>
+          </div>
+          <Field label="NOTE"><input placeholder="optional" value={editForm.note} onChange={e=>setEditForm(f=>({...f,note:e.target.value}))} style={IS}/></Field>
+        </div>
+        <ActionBtn onClick={saveEdit}>SAVE CHANGES</ActionBtn>
+      </Modal>
+
+      <div style={{padding:"14px 16px",borderBottom:accGoals.length>0||showPocketForm?"1px solid var(--b1)":"none"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:acc.note?4:0}}>
+              <span style={{fontSize:15,fontWeight:700,color:"var(--fg)"}}>{acc.name}</span>
+              <span style={{fontSize:9,padding:"2px 7px",borderRadius:5,background:isEUR?"rgba(16,185,129,0.1)":"rgba(96,165,250,0.1)",color:isEUR?"var(--green)":"var(--blue)",fontWeight:600,letterSpacing:"0.04em"}}>{acc.currency}</span>
+            </div>
+            {acc.note&&<div style={{fontSize:11,color:"var(--muted)"}}>{acc.note}</div>}
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <span style={{fontSize:17,fontWeight:700,color:"var(--fg)"}}>{fmt(acc.balance)}</span>
+            <MenuBtn items={[
+              {label:"Edit",action:function(){setEditForm({name:acc.name,balance:acc.balance,rate:acc.rate||"",note:acc.note||""});setShowEdit(true);}},
+              {label:"Delete",danger:true,action:delAcc},
+            ]}/>
+          </div>
+        </div>
+        {accGoals.length>0&&(
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10,paddingTop:10,borderTop:"1px solid var(--b1)"}}>
+            <span style={{fontSize:11,color:"var(--muted)"}}>Free to spend</span>
+            <span style={{fontSize:13,fontWeight:700,color:freeToSpend>=0?"var(--green)":"var(--red)"}}>{fmt(freeToSpend)}</span>
+          </div>
+        )}
+      </div>
+
+      {accGoals.map(g=>(
+        <PocketRow key={g.id} g={g} fmt={fmt} updGoalSaved={updGoalSaved} delGoal={delGoal} allPockets={accGoals}/>
+      ))}
+
+      {showPocketForm&&(
+        <div style={{padding:"14px 16px",borderTop:"1px solid var(--b1)"}}>
+          <div style={{display:"flex",gap:6,marginBottom:10}}>
+            <PillBtn small active={goalForm.type!=="saving"} onClick={()=>setGoalForm(f=>({...f,type:"spending",accountId:acc.id,currency:acc.currency}))}>Spending</PillBtn>
+            <PillBtn small active={goalForm.type==="saving"} onClick={()=>setGoalForm(f=>({...f,type:"saving",accountId:acc.id,currency:acc.currency}))} color="var(--green)">Saving</PillBtn>
+          </div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+            {["*","$","@","!","#","%","&","?","~","=","+","<"].map(e=>(
+              <button key={e} onClick={()=>setGoalForm(f=>({...f,emoji:e,accountId:acc.id,currency:acc.currency}))} style={{fontSize:16,padding:"3px 5px",borderRadius:6,cursor:"pointer",background:goalForm.emoji===e?"rgba(196,181,253,0.15)":"transparent",border:goalForm.emoji===e?"1px solid var(--acc)":"1px solid transparent"}}>{e}</button>
+            ))}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
+            <input placeholder="Pocket name" value={goalForm.accountId===acc.id?goalForm.name:""} onChange={e=>setGoalForm(f=>({...f,name:e.target.value,accountId:acc.id,currency:acc.currency}))} style={{...IS,padding:"11px 14px"}}/>
+            {goalForm.type==="saving"&&(
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                <NumInput placeholder="Target" value={goalForm.accountId===acc.id?goalForm.target:""} onChange={v=>setGoalForm(f=>({...f,target:v,accountId:acc.id,currency:acc.currency}))} style={{...IS,padding:"11px 14px"}}/>
+                <NumInput placeholder="Monthly" value={goalForm.accountId===acc.id?(goalForm.monthlyContrib||""):""} onChange={v=>setGoalForm(f=>({...f,monthlyContrib:v,accountId:acc.id,currency:acc.currency}))} style={{...IS,padding:"11px 14px"}}/>
+              </div>
+            )}
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>{setGoalForm(f=>({...f,accountId:acc.id,currency:acc.currency}));addGoal();setShowPocketForm(false);}} style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:goalForm.type==="saving"?"var(--green)":"var(--acc)",color:"#000",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"var(--font)"}}>ADD POCKET</button>
+            <button onClick={()=>setShowPocketForm(false)} style={{padding:"11px 16px",borderRadius:10,border:"1px solid var(--b2)",background:"transparent",color:"var(--muted)",fontSize:12,cursor:"pointer",fontFamily:"var(--font)"}}>CANCEL</button>
+          </div>
+        </div>
+      )}
+
+      {!showPocketForm&&(
+        <div style={{padding:"10px 16px",borderTop:"1px solid var(--b1)"}}>
+          <button onClick={()=>{setShowPocketForm(true);setGoalForm(f=>({...f,accountId:acc.id,currency:acc.currency,name:"",target:"",emoji:"*",type:"spending"}));}} style={{background:"none",border:"none",color:"var(--acc)",fontSize:11,cursor:"pointer",fontFamily:"var(--font)",fontWeight:600,letterSpacing:"0.04em"}}>
+            + Add pocket
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PocketRow() { return null; }
 function InvestCard() { return null; }
 function AddAccountModal() { return null; }
