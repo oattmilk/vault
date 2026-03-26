@@ -1609,9 +1609,116 @@ function SettingsBtn({data,upd}) {
   );
 }
 
-function ManageCategoriesModal() { return null; }
-ReactDOM.createRoot(document.getElementById("root")).render(<Vault />);
+function CatRow({c,editId,editName,editColor,setEditId,setEditName,setEditColor,onSave,onDelete,isSystem}) {
+  if(editId===c.name) {
+    return (
+      <div style={{display:"flex",alignItems:"center",gap:8,background:"var(--s2)",padding:"9px 12px",borderRadius:10}}>
+        <div style={{width:28,height:28,borderRadius:7,overflow:"hidden",background:editColor,position:"relative",flexShrink:0}}>
+          <input type="color" value={editColor} onChange={function(e){setEditColor(e.target.value);}} style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
+        </div>
+        <input value={editName} onChange={function(e){setEditName(e.target.value);}} style={{flex:1,padding:"6px 10px",borderRadius:8,border:"1px solid var(--b2)",background:"var(--s1)",color:"var(--fg)",fontSize:12,fontFamily:"var(--font)"}}/>
+        <button onClick={onSave} style={{background:"var(--acc)",border:"none",color:"#000",fontSize:11,padding:"6px 10px",borderRadius:7,cursor:"pointer",fontWeight:700}}>Save</button>
+        <button onClick={function(){setEditId(null);}} style={{background:"none",border:"none",color:"var(--muted)",fontSize:16,cursor:"pointer"}}>x</button>
+      </div>
+    );
+  }
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:8,background:"var(--s2)",padding:"9px 12px",borderRadius:10}}>
+      <span style={{fontSize:12,padding:"3px 10px",borderRadius:6,background:c.color,color:"#fff",fontWeight:600}}>{c.name}</span>
+      <div style={{flex:1}}/>
+      <button onClick={function(){setEditId(c.name);setEditName(c.name);setEditColor(c.color);}} style={{background:"none",border:"none",color:"var(--muted)",fontSize:11,cursor:"pointer",fontFamily:"var(--font)"}}>Edit</button>
+      {!isSystem&&<button onClick={onDelete} style={{background:"none",border:"none",color:"var(--red)",fontSize:16,cursor:"pointer",lineHeight:1}}>x</button>}
+    </div>
+  );
+}
 
+function ManageCategoriesModal({show,onClose,data,upd}) {
+  var [newCat,setNewCat]=useState("");
+  var [newColor,setNewColor]=useState("#FF6B6B");
+  var [newType,setNewType]=useState("expense");
+  var [editId,setEditId]=useState(null);
+  var [editName,setEditName]=useState("");
+  var [editColor,setEditColor]=useState("");
+
+  var categories=data.categories||[];
+  var expCats=categories.filter(function(c){return c.type==="expense";});
+  var incCats=categories.filter(function(c){return c.type==="income";});
+  var sysCats=categories.filter(function(c){return c.type==="system";});
+
+  var addCat=function(){
+    if(!newCat.trim()) return;
+    if(categories.find(function(c){return c.name.toLowerCase()===newCat.trim().toLowerCase();})) return alert("Already exists");
+    upd("categories",[...categories,{name:newCat.trim(),color:newColor,type:newType}]);
+    setNewCat("");
+  };
+
+  var delCat=function(name,type){
+    if(type==="system") return;
+    var remaining=categories.filter(function(c){return c.name!==name;});
+    if(!remaining.some(function(c){return c.type==="expense";})||!remaining.some(function(c){return c.type==="income";})) return alert("Need at least one of each type");
+    upd("categories",remaining);
+  };
+
+  var saveEdit=function(){
+    var updated=categories.map(function(cc){
+      if(cc.name===editId) return {name:editName.trim(),color:editColor,type:cc.type};
+      return cc;
+    });
+    upd("categories",updated);
+    setEditId(null);
+  };
+
+  var renderCatList=function(cats,title,isSystem){
+    return (
+      <div style={{marginBottom:18}}>
+        <Lbl>{title}</Lbl>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          {cats.map(function(c){
+            return (
+              <CatRow
+                key={c.name}
+                c={c}
+                editId={editId}
+                editName={editName}
+                editColor={editColor}
+                setEditId={setEditId}
+                setEditName={setEditName}
+                setEditColor={setEditColor}
+                onSave={saveEdit}
+                onDelete={function(){delCat(c.name,c.type);}}
+                isSystem={isSystem}
+              />
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <Modal show={show} onClose={onClose} title="Categories">
+      {expCats.length>0&&renderCatList(expCats,"EXPENSE",false)}
+      {incCats.length>0&&renderCatList(incCats,"INCOME",false)}
+      {sysCats.length>0&&renderCatList(sysCats,"SYSTEM",true)}
+      <div style={{borderTop:"1px solid var(--b1)",paddingTop:18,marginTop:4}}>
+        <Lbl>ADD NEW</Lbl>
+        <div style={{display:"flex",gap:6,marginBottom:10}}>
+          <button onClick={function(){setNewType("expense");}} style={{flex:1,padding:"8px",borderRadius:8,border:"1px solid "+(newType==="expense"?"var(--acc)":"var(--b2)"),background:newType==="expense"?"rgba(196,181,253,0.08)":"transparent",color:newType==="expense"?"var(--acc)":"var(--muted)",fontSize:11,fontFamily:"var(--font)",cursor:"pointer",fontWeight:600}}>expense</button>
+          <button onClick={function(){setNewType("income");}} style={{flex:1,padding:"8px",borderRadius:8,border:"1px solid "+(newType==="income"?"var(--acc)":"var(--b2)"),background:newType==="income"?"rgba(196,181,253,0.08)":"transparent",color:newType==="income"?"var(--acc)":"var(--muted)",fontSize:11,fontFamily:"var(--font)",cursor:"pointer",fontWeight:600}}>income</button>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:12}}>
+          <input value={newCat} onChange={function(e){setNewCat(e.target.value);}} placeholder="Category name" style={{flex:1,...IS,padding:"11px 14px"}}/>
+          <div style={{width:46,height:46,borderRadius:10,overflow:"hidden",background:newColor,position:"relative",flexShrink:0}}>
+            <input type="color" value={newColor} onChange={function(e){setNewColor(e.target.value);}} style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0,cursor:"pointer"}}/>
+          </div>
+        </div>
+        <ActionBtn onClick={addCat} disabled={!newCat.trim()}>+ ADD CATEGORY</ActionBtn>
+      </div>
+    </Modal>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<Vault />);
 </script>
 </body>
 </html>
