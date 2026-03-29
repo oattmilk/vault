@@ -130,7 +130,6 @@
     gap: 1px;
     background: var(--line);
     border: 1px solid var(--line);
-    border-top: none;
   }
   .form-cell {
     background: var(--s1);
@@ -214,7 +213,7 @@
     letter-spacing: 0.2em;
     text-transform: uppercase;
     cursor: pointer;
-    margin-top: 1px;
+    margin-top: 0;
     transition: opacity 0.15s;
   }
   .add-btn:hover { opacity: 0.85; }
@@ -2040,12 +2039,10 @@ function animateCard(bodyEl, chevronEl, open) {
     setTimeout(function() {
       bodyEl.style.height = 'auto';
       var tab = document.querySelector('.tab.active');
-      var tabRect = tab.getBoundingClientRect();
-      var bodyRect = bodyEl.getBoundingClientRect();
-      var navHeight = 96;
-      var overflow = bodyRect.bottom - (window.innerHeight - navHeight);
-      if (overflow > 0) {
-        tab.scrollTop += overflow + 16;
+      var bodyBottom = bodyEl.offsetTop + bodyEl.offsetHeight;
+      var visibleBottom = tab.scrollTop + tab.clientHeight - 96;
+      if (bodyBottom > visibleBottom) {
+        tab.scrollTo({ top: bodyBottom - tab.clientHeight + 96 + 16, behavior: 'smooth' });
       }
     }, 310);
   } else {
