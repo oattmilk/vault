@@ -2037,13 +2037,17 @@ function animateCard(bodyEl, chevronEl, open) {
   if (open) {
     var h = bodyEl.scrollHeight;
     bodyEl.style.height = h + 'px';
-    var rect = bodyEl.getBoundingClientRect();
-    var projected = rect.top + h;
-    var viewBottom = window.innerHeight - 96;
-    if (projected > viewBottom) {
-      bodyEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
-    setTimeout(function() { bodyEl.style.height = 'auto'; }, 310);
+    setTimeout(function() {
+      bodyEl.style.height = 'auto';
+      var tab = document.querySelector('.tab.active');
+      var tabRect = tab.getBoundingClientRect();
+      var bodyRect = bodyEl.getBoundingClientRect();
+      var navHeight = 96;
+      var overflow = bodyRect.bottom - (window.innerHeight - navHeight);
+      if (overflow > 0) {
+        tab.scrollTop += overflow + 16;
+      }
+    }, 310);
   } else {
     bodyEl.style.height = bodyEl.scrollHeight + 'px';
     setTimeout(function() { bodyEl.style.height = '0'; }, 10);
