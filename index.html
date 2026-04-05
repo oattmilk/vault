@@ -807,13 +807,18 @@ function fmtForInput(n) {
   var parts = Number(n).toFixed(2).split('.');
   return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + parts[1];
 }
+function parseNum(id) {
   return parseFloat((document.getElementById(id).value || '').replace(/\./g, '').replace(',', '.')) || 0;
 }
 
 // ─── Formatters ───
-function fmtEur(n)    { return '\u20AC' + Number(n).toLocaleString('en', {minimumFractionDigits:0, maximumFractionDigits:0}); }
-function fmtEurDec(n) { return '\u20AC' + Number(n).toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2}); }
-function fmtIdr(n)    { return 'Rp' + Math.round(n/1000).toLocaleString('en') + 'K'; }
+function fmtNum(n, decimals) {
+  var parts = Number(n).toFixed(decimals).split('.');
+  return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (decimals > 0 ? ',' + parts[1] : '');
+}
+function fmtEur(n)    { return '\u20AC' + fmtNum(n, 0); }
+function fmtEurDec(n) { return '\u20AC' + fmtNum(n, 2); }
+function fmtIdr(n)    { return 'Rp' + fmtNum(Math.round(n/1000), 0) + 'K'; }
 function fmtAmt(amount, currency) { return currency === 'IDR' ? fmtIdr(amount) : fmtEurDec(amount); }
 function fmtDate(s) {
   if (!s) return '\u2014';
@@ -931,11 +936,12 @@ function txRowHTML(tx, showDel) {
   var sign = tx.type==='in' ? '+' : tx.type==='move' ? '\u2194' : '\u2212';
   var cls  = tx.type==='in' ? 'in' : tx.type==='move' ? 'move' : 'out';
   var sub  = [tx.note, tx.pocketName].filter(Boolean).join(' \u00B7 ');
-  return '<div class="tx-row" onclick="'+(tx.pending ? 'openModal(\''+tx.id+'\')' : '')+'">' +
+  var click = tx.pending ? ' onclick="openModal(this.dataset.id)"' : '';
+  return '<div class="tx-row" data-id="'+tx.id+'"'+click+'>' +
     '<div class="tx-dot '+(tx.pending?'pending':tx.type)+'"></div>' +
     '<div class="tx-main"><div class="tx-cat">'+tx.category+'</div>'+(sub?'<div class="tx-note">'+sub+'</div>':'')+'</div>' +
     '<div class="tx-right"><div class="tx-amount '+cls+'">'+sign+fmtAmt(tx.amount,tx.currency)+'</div><div class="tx-date">'+fmtDate(tx.date)+' \u00B7 '+tx.accountName+'</div></div>' +
-    (showDel ? '<button class="tx-del" onclick="deleteTx(\''+tx.id+'\',event)">\u00D7</button>' : '') +
+    (showDel ? '<button class="tx-del" onclick="deleteTx(this.parentNode.dataset.id,event)">\u00D7</button>' : '') +
   '</div>';
 }
 
@@ -966,8 +972,8 @@ function deleteTx(id, evt) {
 
 // ─── Pending TX modal ───
 function openModal(id) {
-  activeTxId = id;
-  var tx = (data.transactions||[]).find(function(t) { return t.id === id; });
+  activeTxId = typeof id === 'string' ? id : id;
+  var tx = (data.transactions||[]).find(function(t) { return t.id === activeTxId; });
   if (!tx) return;
   document.getElementById('modalCat').textContent    = tx.category;
   document.getElementById('modalNote').textContent   = tx.note || '';
@@ -996,7 +1002,7 @@ function renderHome() {
   var invVal  = (data.investments||[]).reduce(function(s,i) { return s+(i.currentValue||0); }, 0);
   var net     = eurSum - debtSum + invVal;
 
-  document.getElementById('homeNet').innerHTML = '<sup>\u20AC</sup>' + Math.round(net).toLocaleString('en');
+  document.getElementById('homeNet').innerHTML = '<sup>\u20AC</sup>' + fmtNum(Math.round(net), 0);
   document.getElementById('homeEur').textContent    = fmtEur(eurSum);
   document.getElementById('homeEurSub').textContent = (data.eurAccounts||[]).length + ' accounts';
   document.getElementById('homeIdr').textContent    = fmtIdr(idrSum);
@@ -1119,18 +1125,18 @@ function renderVault() {
 
     var pocketRows = accPockets.map(function(p) {
       var pBal = a.currency==='IDR' ? fmtIdr(p.balance) : fmtEurDec(p.balance);
-      return '<div class="pocket-row" onclick="openPocketModal(\''+a.id+'\',\''+p.id+'\')">' +
+      return '<div class="pocket-row" data-aid="'+a.id+'" data-pid="'+p.id+'" onclick="openPocketModal(this.dataset.aid,this.dataset.pid)">' +
         '<div><div class="pocket-name">'+p.name+'</div>'+(p.note?'<div class="pocket-note">'+p.note+'</div>':'')+'</div>' +
         '<div class="pocket-balance">'+pBal+'</div></div>';
     }).join('');
 
-    var footer = '<button class="pocket-add-btn" onclick="openPocketModal(\''+a.id+'\')">+ Add pocket</button><button class="pocket-edit-btn" onclick="openVModal(\'modalAccount\',\''+a.id+'\',\''+a.currency+'\')">Edit</button>';
+    var footer = '<button class="pocket-add-btn" data-aid="'+a.id+'" onclick="openPocketModal(this.dataset.aid)">+ Add pocket</button><button class="pocket-edit-btn" data-aid="'+a.id+'" data-cur="'+a.currency+'" onclick="openVModal(\'modalAccount\',this.dataset.aid,this.dataset.cur)">Edit</button>';
     var innerContent = accPockets.length
       ? '<div class="pocket-unallocated"><div class="pocket-unallocated-label">Unallocated</div><div class="pocket-unallocated-val">'+unallocFmt+'</div></div>'+pocketRows+'<div class="pocket-footer">'+footer+'</div>'
       : '<div style="padding:10px 0;display:flex;justify-content:space-between;align-items:center;">'+footer+'</div>';
 
     return '<div class="account-row">' +
-      '<div class="account-summary" onclick="toggleAccount(\''+a.id+'\')">' +
+      '<div class="account-summary" data-id="'+a.id+'" onclick="toggleAccount(this.dataset.id)">' +
         '<div><div class="account-name">'+a.name+'</div><div class="account-sub">'+a.currency+(a.note?' \u00B7 '+a.note:'')+'</div></div>' +
         '<div style="display:flex;align-items:center;gap:12px;"><div class="account-balance">'+bal+'</div><div class="account-chevron'+(isOpen?' open':'')+'" id="chevron-'+a.id+'">&#9660;</div></div>' +
       '</div>' +
@@ -1153,7 +1159,7 @@ function renderVault() {
   document.getElementById('vaultDebts').innerHTML = debtCount ? (data.debts||[]).map(function(d) {
     var paid = (d.totalMonths||0)-(d.months||0);
     var pct  = d.total ? Math.round(((d.total-d.remaining)/d.total)*100) : 0;
-    return '<div class="debt-row vault-row-clickable" onclick="openVModal(\'modalDebt\',\''+d.id+'\')">' +
+    return '<div class="debt-row vault-row-clickable" data-id="'+d.id+'" onclick="openVModal(\'modalDebt\',this.dataset.id)">' +
       '<div class="debt-main"><div><div class="debt-name">'+d.name+'</div><div class="debt-detail">'+paid+' of '+d.totalMonths+' months paid</div></div>' +
       '<div><div class="debt-remaining">'+fmtAmt(d.remaining,d.currency)+'</div><div class="debt-monthly">'+fmtAmt(d.monthly,d.currency)+' / mo</div></div></div>' +
       '<div class="debt-bar"><div class="debt-bar-fill" style="width:'+pct+'%"></div></div></div>';
@@ -1168,7 +1174,7 @@ function renderVault() {
   document.getElementById('subsCardTotal').style.color = subsCount ? 'var(--fg)' : 'var(--muted)';
   document.getElementById('subsCardMeta').textContent  = subsCount ? subsCount+(subsCount===1?' subscription':' subscriptions') : 'No subscriptions';
   document.getElementById('vaultSubs').innerHTML = subsCount ? (data.subscriptions||[]).map(function(s) {
-    return '<div class="sub-row vault-row-clickable" onclick="openVModal(\'modalSub\',\''+s.id+'\')">' +
+    return '<div class="sub-row vault-row-clickable" data-id="'+s.id+'" onclick="openVModal(\'modalSub\',this.dataset.id)">' +
       '<div><div class="sub-name">'+s.name+'</div><div class="sub-detail">'+(s.renewal||'')+(s.accountName?' \u00B7 '+s.accountName:'')+'</div></div>' +
       '<div><div class="sub-amount">'+fmtAmt(s.amount,s.currency)+'</div><div class="sub-next">next '+fmtDate(s.nextDate)+'</div></div></div>';
   }).join('') : '<div class="empty">No subscriptions</div>';
@@ -1187,7 +1193,7 @@ function renderVault() {
     var gainPct = i.totalInvested ? ((gain/i.totalInvested)*100).toFixed(1) : '0.0';
     var isUp    = gain >= 0;
     var gainStr = (isUp?'+':'')+fmtAmt(Math.abs(gain),i.currency)+' ('+(isUp?'+':'')+gainPct+'%)';
-    return '<div class="inv-row vault-row-clickable" onclick="openVModal(\'modalInv\',\''+i.id+'\')">' +
+    return '<div class="inv-row vault-row-clickable" data-id="'+i.id+'" onclick="openVModal(\'modalInv\',this.dataset.id)">' +
       '<div class="inv-main"><div><div class="inv-name">'+i.name+'</div><div class="inv-type">'+(i.type||'')+'</div></div>' +
       '<div><div class="inv-value'+(isUp?' up':'')+'">'+fmtAmt(i.currentValue,i.currency)+'</div><div class="inv-gain'+(isUp?' up':' down')+'">'+gainStr+'</div></div></div>' +
       (i.monthlyAmount?'<div class="inv-monthly">'+fmtAmt(i.monthlyAmount,i.currency)+' / mo sparplan</div>':'')+
