@@ -419,7 +419,7 @@
         </div>
         <div class="form-cell full">
           <div class="form-label">Amount</div>
-          <input class="form-input" id="fAmount" type="number" inputmode="decimal" placeholder="0.00" />
+          <input class="form-input" id="fAmount" type="text" inputmode="decimal" placeholder="0.00" oninput="fmtNumInput(this)" />
         </div>
         <div class="form-cell full" id="fCategoryCell">
           <div class="form-label">Category</div>
@@ -611,7 +611,7 @@
     <div class="vmodal-body">
       <div class="vmodal-cell full"><div class="vmodal-label">Name</div><input class="vmodal-input" id="accName" type="text" placeholder="e.g. N26" /></div>
       <div class="vmodal-cell"><div class="vmodal-label">Currency</div><select class="vmodal-select" id="accCurrency"><option value="EUR">EUR</option><option value="IDR">IDR</option></select></div>
-      <div class="vmodal-cell"><div class="vmodal-label">Balance</div><input class="vmodal-input large" id="accBalance" type="number" inputmode="decimal" placeholder="0.00" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Balance</div><input class="vmodal-input large" id="accBalance" type="text" inputmode="decimal" placeholder="0.00" oninput="fmtNumInput(this)" /></div>
       <div class="vmodal-cell full"><div class="vmodal-label">Note</div><input class="vmodal-input" id="accNote" type="text" placeholder="Optional" /></div>
     </div>
     <div class="vmodal-foot">
@@ -630,9 +630,9 @@
     <div class="vmodal-body">
       <div class="vmodal-cell full"><div class="vmodal-label">Name</div><input class="vmodal-input" id="debtName" type="text" placeholder="e.g. Student Loan" /></div>
       <div class="vmodal-cell"><div class="vmodal-label">Currency</div><select class="vmodal-select" id="debtCurrency"><option value="EUR">EUR</option><option value="IDR">IDR</option></select></div>
-      <div class="vmodal-cell"><div class="vmodal-label">Total Amount</div><input class="vmodal-input large" id="debtTotal" type="number" inputmode="decimal" placeholder="0" /></div>
-      <div class="vmodal-cell"><div class="vmodal-label">Remaining</div><input class="vmodal-input large" id="debtRemaining" type="number" inputmode="decimal" placeholder="0" /></div>
-      <div class="vmodal-cell"><div class="vmodal-label">Monthly Payment</div><input class="vmodal-input large" id="debtMonthly" type="number" inputmode="decimal" placeholder="0" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Total Amount</div><input class="vmodal-input large" id="debtTotal" type="text" inputmode="decimal" placeholder="0" oninput="fmtNumInput(this)" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Remaining</div><input class="vmodal-input large" id="debtRemaining" type="text" inputmode="decimal" placeholder="0" oninput="fmtNumInput(this)" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Monthly Payment</div><input class="vmodal-input large" id="debtMonthly" type="text" inputmode="decimal" placeholder="0" oninput="fmtNumInput(this)" /></div>
     </div>
     <div class="vmodal-foot">
       <button class="vmodal-save" onclick="saveDebt()">Save</button>
@@ -650,7 +650,7 @@
     <div class="vmodal-body">
       <div class="vmodal-cell full"><div class="vmodal-label">Name</div><input class="vmodal-input" id="subName" type="text" placeholder="e.g. Spotify" /></div>
       <div class="vmodal-cell"><div class="vmodal-label">Currency</div><select class="vmodal-select" id="subCurrency"><option value="EUR">EUR</option><option value="IDR">IDR</option></select></div>
-      <div class="vmodal-cell"><div class="vmodal-label">Amount</div><input class="vmodal-input large" id="subAmount" type="number" inputmode="decimal" placeholder="0.00" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Amount</div><input class="vmodal-input large" id="subAmount" type="text" inputmode="decimal" placeholder="0.00" oninput="fmtNumInput(this)" /></div>
       <div class="vmodal-cell"><div class="vmodal-label">Renewal</div><select class="vmodal-select" id="subRenewal"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="weekly">Weekly</option></select></div>
       <div class="vmodal-cell"><div class="vmodal-label">Account</div><select class="vmodal-select" id="subAccount"></select></div>
       <div class="vmodal-cell full"><div class="vmodal-label">Next Date</div><input class="vmodal-input" id="subNextDate" type="date" style="color:var(--fg);font-size:14px;" /></div>
@@ -672,9 +672,9 @@
       <div class="vmodal-cell full"><div class="vmodal-label">Name</div><input class="vmodal-input" id="invName" type="text" placeholder="e.g. VWCE ETF" /></div>
       <div class="vmodal-cell"><div class="vmodal-label">Type</div><select class="vmodal-select" id="invType"><option value="ETF">ETF</option><option value="Stock">Stock</option><option value="Crypto">Crypto</option><option value="Bonds">Bonds</option><option value="Other">Other</option></select></div>
       <div class="vmodal-cell"><div class="vmodal-label">Currency</div><select class="vmodal-select" id="invCurrency"><option value="EUR">EUR</option><option value="IDR">IDR</option></select></div>
-      <div class="vmodal-cell"><div class="vmodal-label">Total Invested</div><input class="vmodal-input large" id="invInvested" type="number" inputmode="decimal" placeholder="0" /></div>
-      <div class="vmodal-cell"><div class="vmodal-label">Current Value</div><input class="vmodal-input large" id="invValue" type="number" inputmode="decimal" placeholder="0" /></div>
-      <div class="vmodal-cell full"><div class="vmodal-label">Monthly Sparplan</div><input class="vmodal-input large" id="invMonthly" type="number" inputmode="decimal" placeholder="0 (optional)" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Total Invested</div><input class="vmodal-input large" id="invInvested" type="text" inputmode="decimal" placeholder="0" oninput="fmtNumInput(this)" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Current Value</div><input class="vmodal-input large" id="invValue" type="text" inputmode="decimal" placeholder="0" oninput="fmtNumInput(this)" /></div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Monthly Sparplan</div><input class="vmodal-input large" id="invMonthly" type="text" inputmode="decimal" placeholder="0 (optional)" oninput="fmtNumInput(this)" /></div>
     </div>
     <div class="vmodal-foot">
       <button class="vmodal-save" onclick="saveInvestment()">Save</button>
@@ -691,7 +691,7 @@
     </div>
     <div class="vmodal-body">
       <div class="vmodal-cell full"><div class="vmodal-label">Name</div><input class="vmodal-input" id="pocketName" type="text" placeholder="e.g. Rent" /></div>
-      <div class="vmodal-cell full"><div class="vmodal-label">Balance</div><input class="vmodal-input large" id="pocketBalance" type="number" inputmode="decimal" placeholder="0.00" /></div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Balance</div><input class="vmodal-input large" id="pocketBalance" type="text" inputmode="decimal" placeholder="0.00" oninput="fmtNumInput(this)" /></div>
       <div class="vmodal-cell full"><div class="vmodal-label">Note</div><input class="vmodal-input" id="pocketNote" type="text" placeholder="Optional" /></div>
     </div>
     <div class="vmodal-foot">
@@ -789,6 +789,23 @@ function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 function uid()  { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function today(){ return new Date().toISOString().slice(0,10); }
 
+// ─── Number input formatter ───
+function fmtNumInput(el) {
+  var raw = el.value.replace(/,/g, '');
+  var parts = raw.split('.');
+  var integer = parts[0].replace(/\D/g, '');
+  var decimal = parts.length > 1 ? '.' + parts[1].replace(/\D/g, '').slice(0, 2) : '';
+  var formatted = integer ? parseInt(integer, 10).toLocaleString('en') : '';
+  var cursor = el.selectionStart;
+  var prevLen = el.value.length;
+  el.value = formatted + decimal;
+  var diff = el.value.length - prevLen;
+  el.setSelectionRange(cursor + diff, cursor + diff);
+}
+function parseNum(id) {
+  return parseFloat((document.getElementById(id).value || '').replace(/,/g, '')) || 0;
+}
+
 // ─── Formatters ───
 function fmtEur(n)    { return '\u20AC' + Number(n).toLocaleString('en', {minimumFractionDigits:0, maximumFractionDigits:0}); }
 function fmtEurDec(n) { return '\u20AC' + Number(n).toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2}); }
@@ -879,7 +896,7 @@ function refreshCategories() {
 }
 
 function addTransaction() {
-  var amount = parseFloat(document.getElementById('fAmount').value);
+  var amount = parseNum('fAmount');
   if (!amount || isNaN(amount)) { document.getElementById('fAmount').focus(); return; }
   var currency  = document.getElementById('fCurrency').value;
   var accountId = document.getElementById('fAccount').value;
@@ -1182,7 +1199,7 @@ function openPocketModal(accountId, pocketId) {
   document.getElementById('pocketDelBtn').classList.toggle('visible', !!vEditId);
   if (vEditId) {
     var p = (data.pockets||[]).find(function(x) { return x.id===vEditId; });
-    if (p) { document.getElementById('pocketName').value=p.name; document.getElementById('pocketBalance').value=p.balance; document.getElementById('pocketNote').value=p.note||''; }
+    if (p) { document.getElementById('pocketName').value=p.name; document.getElementById('pocketBalance').value=p.balance.toLocaleString('en'); document.getElementById('pocketNote').value=p.note||''; }
   } else {
     document.getElementById('pocketName').value=''; document.getElementById('pocketBalance').value=''; document.getElementById('pocketNote').value='';
   }
@@ -1191,7 +1208,7 @@ function openPocketModal(accountId, pocketId) {
 
 function savePocket() {
   var name    = document.getElementById('pocketName').value.trim();
-  var balance = parseFloat(document.getElementById('pocketBalance').value) || 0;
+  var balance = parseNum('pocketBalance');
   var note    = document.getElementById('pocketNote').value.trim();
   if (!name) { document.getElementById('pocketName').focus(); return; }
   data.pockets = data.pockets || [];
@@ -1230,16 +1247,16 @@ function openVModal(id, editId, type) {
     if (id==='modalAccount') {
       var arr = ((type==='IDR'?data.idrAccounts:data.eurAccounts)||[]);
       var a   = arr.find(function(x) { return x.id===vEditId; });
-      if (a) { document.getElementById('accName').value=a.name; document.getElementById('accCurrency').value=a.currency; document.getElementById('accBalance').value=a.balance; document.getElementById('accNote').value=a.note||''; }
+      if (a) { document.getElementById('accName').value=a.name; document.getElementById('accCurrency').value=a.currency; document.getElementById('accBalance').value=a.balance.toLocaleString('en'); document.getElementById('accNote').value=a.note||''; }
     } else if (id==='modalDebt') {
       var d = (data.debts||[]).find(function(x) { return x.id===vEditId; });
-      if (d) { document.getElementById('debtName').value=d.name; document.getElementById('debtCurrency').value=d.currency; document.getElementById('debtTotal').value=d.total; document.getElementById('debtRemaining').value=d.remaining; document.getElementById('debtMonthly').value=d.monthly; }
+      if (d) { document.getElementById('debtName').value=d.name; document.getElementById('debtCurrency').value=d.currency; document.getElementById('debtTotal').value=d.total.toLocaleString('en'); document.getElementById('debtRemaining').value=d.remaining.toLocaleString('en'); document.getElementById('debtMonthly').value=d.monthly.toLocaleString('en'); }
     } else if (id==='modalSub') {
       var s = (data.subscriptions||[]).find(function(x) { return x.id===vEditId; });
-      if (s) { document.getElementById('subName').value=s.name; document.getElementById('subCurrency').value=s.currency; document.getElementById('subAmount').value=s.amount; document.getElementById('subRenewal').value=s.renewal; document.getElementById('subAccount').value=s.accountName; document.getElementById('subNextDate').value=s.nextDate||today(); }
+      if (s) { document.getElementById('subName').value=s.name; document.getElementById('subCurrency').value=s.currency; document.getElementById('subAmount').value=s.amount.toLocaleString('en'); document.getElementById('subRenewal').value=s.renewal; document.getElementById('subAccount').value=s.accountName; document.getElementById('subNextDate').value=s.nextDate||today(); }
     } else if (id==='modalInv') {
       var inv = (data.investments||[]).find(function(x) { return x.id===vEditId; });
-      if (inv) { document.getElementById('invName').value=inv.name; document.getElementById('invType').value=inv.type; document.getElementById('invCurrency').value=inv.currency; document.getElementById('invInvested').value=inv.totalInvested; document.getElementById('invValue').value=inv.currentValue; document.getElementById('invMonthly').value=inv.monthlyAmount||''; }
+      if (inv) { document.getElementById('invName').value=inv.name; document.getElementById('invType').value=inv.type; document.getElementById('invCurrency').value=inv.currency; document.getElementById('invInvested').value=inv.totalInvested.toLocaleString('en'); document.getElementById('invValue').value=inv.currentValue.toLocaleString('en'); document.getElementById('invMonthly').value=inv.monthlyAmount ? inv.monthlyAmount.toLocaleString('en') : ''; }
     }
   } else {
     if (id==='modalAccount') clearInputs(['accName','accBalance','accNote']);
@@ -1267,7 +1284,7 @@ function clearInputs(ids) {
 function saveAccount() {
   var name     = document.getElementById('accName').value.trim();
   var currency = document.getElementById('accCurrency').value;
-  var balance  = parseFloat(document.getElementById('accBalance').value) || 0;
+  var balance  = parseNum('accBalance');
   var note     = document.getElementById('accNote').value.trim();
   if (!name) { document.getElementById('accName').focus(); return; }
   if (vEditId) {
@@ -1299,9 +1316,9 @@ function deleteAccount() {
 function saveDebt() {
   var name      = document.getElementById('debtName').value.trim();
   var currency  = document.getElementById('debtCurrency').value;
-  var total     = parseFloat(document.getElementById('debtTotal').value) || 0;
-  var remaining = parseFloat(document.getElementById('debtRemaining').value) || 0;
-  var monthly   = parseFloat(document.getElementById('debtMonthly').value) || 0;
+  var total     = parseNum('debtTotal');
+  var remaining = parseNum('debtRemaining');
+  var monthly   = parseNum('debtMonthly');
   if (!name) { document.getElementById('debtName').focus(); return; }
   var obj = {id:vEditId||uid(), name:name, total:total, remaining:remaining, monthly:monthly, totalMonths:monthly>0?Math.round(total/monthly):0, months:monthly>0?Math.round(remaining/monthly):0, currency:currency};
   if (vEditId) { var idx=(data.debts||[]).findIndex(function(x){return x.id===vEditId;}); if(idx>-1) data.debts[idx]=obj; }
@@ -1318,7 +1335,7 @@ function deleteDebt() {
 function saveSub() {
   var name     = document.getElementById('subName').value.trim();
   var currency = document.getElementById('subCurrency').value;
-  var amount   = parseFloat(document.getElementById('subAmount').value) || 0;
+  var amount   = parseNum('subAmount');
   var renewal  = document.getElementById('subRenewal').value;
   var accName  = document.getElementById('subAccount').value;
   var nextDate = document.getElementById('subNextDate').value;
@@ -1339,9 +1356,9 @@ function saveInvestment() {
   var name     = document.getElementById('invName').value.trim();
   var type     = document.getElementById('invType').value;
   var currency = document.getElementById('invCurrency').value;
-  var invested = parseFloat(document.getElementById('invInvested').value) || 0;
-  var value    = parseFloat(document.getElementById('invValue').value) || 0;
-  var monthly  = parseFloat(document.getElementById('invMonthly').value) || 0;
+  var invested = parseNum('invInvested');
+  var value    = parseNum('invValue');
+  var monthly  = parseNum('invMonthly');
   if (!name) { document.getElementById('invName').focus(); return; }
   var obj = {id:vEditId||uid(), name:name, type:type, totalInvested:invested, currentValue:value, currency:currency, monthlyAmount:monthly};
   if (vEditId) { var idx=(data.investments||[]).findIndex(function(x){return x.id===vEditId;}); if(idx>-1) data.investments[idx]=obj; }
