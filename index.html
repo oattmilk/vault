@@ -791,19 +791,23 @@ function today(){ return new Date().toISOString().slice(0,10); }
 
 // ─── Number input formatter ───
 function fmtNumInput(el) {
-  var raw = el.value.replace(/,/g, '');
-  var parts = raw.split('.');
+  var raw = el.value.replace(/\./g, '');
+  var parts = raw.split(',');
   var integer = parts[0].replace(/\D/g, '');
-  var decimal = parts.length > 1 ? '.' + parts[1].replace(/\D/g, '').slice(0, 2) : '';
-  var formatted = integer ? parseInt(integer, 10).toLocaleString('en') : '';
+  var decimal = parts.length > 1 ? ',' + parts[1].replace(/\D/g, '').slice(0, 2) : '';
+  var formatted = integer ? parseInt(integer, 10).toLocaleString('en').replace(/,/g, '.') : '';
   var cursor = el.selectionStart;
   var prevLen = el.value.length;
   el.value = formatted + decimal;
   var diff = el.value.length - prevLen;
   el.setSelectionRange(cursor + diff, cursor + diff);
 }
-function parseNum(id) {
-  return parseFloat((document.getElementById(id).value || '').replace(/,/g, '')) || 0;
+function fmtForInput(n) {
+  if (!n && n !== 0) return '';
+  var parts = Number(n).toFixed(2).split('.');
+  return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + parts[1];
+}
+  return parseFloat((document.getElementById(id).value || '').replace(/\./g, '').replace(',', '.')) || 0;
 }
 
 // ─── Formatters ───
@@ -1199,7 +1203,7 @@ function openPocketModal(accountId, pocketId) {
   document.getElementById('pocketDelBtn').classList.toggle('visible', !!vEditId);
   if (vEditId) {
     var p = (data.pockets||[]).find(function(x) { return x.id===vEditId; });
-    if (p) { document.getElementById('pocketName').value=p.name; document.getElementById('pocketBalance').value=p.balance.toLocaleString('en'); document.getElementById('pocketNote').value=p.note||''; }
+    if (p) { document.getElementById('pocketName').value=p.name; document.getElementById('pocketBalance').value=fmtForInput(p.balance); document.getElementById('pocketNote').value=p.note||''; }
   } else {
     document.getElementById('pocketName').value=''; document.getElementById('pocketBalance').value=''; document.getElementById('pocketNote').value='';
   }
@@ -1247,16 +1251,16 @@ function openVModal(id, editId, type) {
     if (id==='modalAccount') {
       var arr = ((type==='IDR'?data.idrAccounts:data.eurAccounts)||[]);
       var a   = arr.find(function(x) { return x.id===vEditId; });
-      if (a) { document.getElementById('accName').value=a.name; document.getElementById('accCurrency').value=a.currency; document.getElementById('accBalance').value=a.balance.toLocaleString('en'); document.getElementById('accNote').value=a.note||''; }
+      if (a) { document.getElementById('accName').value=a.name; document.getElementById('accCurrency').value=a.currency; document.getElementById('accBalance').value=fmtForInput(a.balance); document.getElementById('accNote').value=a.note||''; }
     } else if (id==='modalDebt') {
       var d = (data.debts||[]).find(function(x) { return x.id===vEditId; });
-      if (d) { document.getElementById('debtName').value=d.name; document.getElementById('debtCurrency').value=d.currency; document.getElementById('debtTotal').value=d.total.toLocaleString('en'); document.getElementById('debtRemaining').value=d.remaining.toLocaleString('en'); document.getElementById('debtMonthly').value=d.monthly.toLocaleString('en'); }
+      if (d) { document.getElementById('debtName').value=d.name; document.getElementById('debtCurrency').value=d.currency; document.getElementById('debtTotal').value=fmtForInput(d.total); document.getElementById('debtRemaining').value=fmtForInput(d.remaining); document.getElementById('debtMonthly').value=fmtForInput(d.monthly); }
     } else if (id==='modalSub') {
       var s = (data.subscriptions||[]).find(function(x) { return x.id===vEditId; });
-      if (s) { document.getElementById('subName').value=s.name; document.getElementById('subCurrency').value=s.currency; document.getElementById('subAmount').value=s.amount.toLocaleString('en'); document.getElementById('subRenewal').value=s.renewal; document.getElementById('subAccount').value=s.accountName; document.getElementById('subNextDate').value=s.nextDate||today(); }
+      if (s) { document.getElementById('subName').value=s.name; document.getElementById('subCurrency').value=s.currency; document.getElementById('subAmount').value=fmtForInput(s.amount); document.getElementById('subRenewal').value=s.renewal; document.getElementById('subAccount').value=s.accountName; document.getElementById('subNextDate').value=s.nextDate||today(); }
     } else if (id==='modalInv') {
       var inv = (data.investments||[]).find(function(x) { return x.id===vEditId; });
-      if (inv) { document.getElementById('invName').value=inv.name; document.getElementById('invType').value=inv.type; document.getElementById('invCurrency').value=inv.currency; document.getElementById('invInvested').value=inv.totalInvested.toLocaleString('en'); document.getElementById('invValue').value=inv.currentValue.toLocaleString('en'); document.getElementById('invMonthly').value=inv.monthlyAmount ? inv.monthlyAmount.toLocaleString('en') : ''; }
+      if (inv) { document.getElementById('invName').value=inv.name; document.getElementById('invType').value=inv.type; document.getElementById('invCurrency').value=inv.currency; document.getElementById('invInvested').value=fmtForInput(inv.totalInvested); document.getElementById('invValue').value=fmtForInput(inv.currentValue); document.getElementById('invMonthly').value=inv.monthlyAmount ? fmtForInput(inv.monthlyAmount) : ''; }
     }
   } else {
     if (id==='modalAccount') clearInputs(['accName','accBalance','accNote']);
