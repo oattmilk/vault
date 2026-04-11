@@ -631,9 +631,9 @@ var DEFAULT_DATA = {
     { id:'d1', name:'Student Loan', total:12000, remaining:4800, monthly:250, totalMonths:48, months:19, currency:'EUR' },
   ],
   subscriptions: [
-    { id:'s1', name:'Spotify', amount:9.99,  currency:'EUR', renewal:'monthly', accountName:'N26',  nextDate:'2025-04-01' },
-    { id:'s2', name:'iCloud',  amount:2.99,  currency:'EUR', renewal:'monthly', accountName:'N26',  nextDate:'2025-04-05' },
-    { id:'s3', name:'NordVPN', amount:59.88, currency:'EUR', renewal:'yearly',  accountName:'Wise', nextDate:'2025-11-12' },
+    { id:'s1', name:'Spotify', amount:9.99,  currency:'EUR', renewal:'monthly', accountName:'N26',  nextDate:'2026-04-15' },
+    { id:'s2', name:'iCloud',  amount:2.99,  currency:'EUR', renewal:'monthly', accountName:'N26',  nextDate:'2026-04-20' },
+    { id:'s3', name:'NordVPN', amount:59.88, currency:'EUR', renewal:'yearly',  accountName:'Wise', nextDate:'2026-11-12' },
   ],
   goals: [],
   pockets: [
@@ -716,6 +716,42 @@ function fmtDateLong(s) {
   return new Date(s+'T00:00:00').toLocaleDateString('en', {weekday:'short', month:'short', day:'numeric'});
 }
 function allAccounts() { return (data.eurAccounts||[]).concat(data.idrAccounts||[]); }
+
+function getSubsDue(days) {
+  var now = new Date();
+  now.setHours(0,0,0,0);
+  var cutoff = new Date(now.getFullYear(), now.getMonth() + 1, 0); // last day of current month
+  cutoff.setHours(23,59,59,999);
+  return (data.subscriptions||[]).filter(function(s) {
+    if (!s.nextDate) return false;
+    var d = new Date(s.nextDate + 'T00:00:00');
+    return d >= now && d <= cutoff;
+  }).map(function(s) {
+    var acc = allAccounts().find(function(a) { return a.name === s.accountName; });
+    return {
+      id: 'sub__' + s.id,
+      subId: s.id,
+      type: 'out',
+      currency: s.currency,
+      amount: s.amount,
+      category: 'Subscriptions',
+      note: s.name,
+      date: s.nextDate,
+      accountId: acc ? acc.id : null,
+      accountName: s.accountName || '',
+      pending: true,
+    };
+  });
+}
+
+function advanceSubDate(sub) {
+  if (!sub.nextDate) return;
+  var d = new Date(sub.nextDate + 'T00:00:00');
+  if (sub.renewal === 'yearly')       d.setFullYear(d.getFullYear() + 1);
+  else if (sub.renewal === 'weekly')  d.setDate(d.getDate() + 7);
+  else                                d.setMonth(d.getMonth() + 1);
+  sub.nextDate = d.toISOString().slice(0, 10);
+}
 
 // ─── Balance mutation ───
 function applyTxToBalance(tx, multiplier) {
@@ -863,7 +899,8 @@ function renderTrack() {
   refreshCategories();
   document.getElementById('fDate').value = today();
 
-  var upcoming = (data.transactions||[]).filter(function(t) { return t.pending; });
+  var upcomingTxs = (data.transactions||[]).filter(function(t) { return t.pending; });
+  var upcoming = upcomingTxs.concat(getSubsDue(7)).sort(function(a,b) { return a.date.localeCompare(b.date); });
   document.getElementById('upcomingMeta').textContent = upcoming.length + ' pending';
   document.getElementById('upcomingList').innerHTML = upcoming.length
     ? upcoming.map(function(tx) { return txRowHTML(tx, false); }).join('')
@@ -888,29 +925,59 @@ function deleteTx(id, evt) {
 // ─── Pending TX modal ───
 function openModal(id) {
   activeTxId = id;
-  var tx = (data.transactions||[]).find(function(t) { return t.id === activeTxId; });
+  var tx;
+  if (typeof id === 'string' && id.indexOf('sub__') === 0) {
+    tx = getSubsDue(7).find(function(t) { return t.id === id; });
+  } else {
+    tx = (data.transactions||[]).find(function(t) { return t.id === id; });
+  }
   if (!tx) return;
   document.getElementById('modalCat').textContent    = tx.category;
   document.getElementById('modalNote').textContent   = tx.note || '';
-  document.getElementById('modalAmount').textContent = (tx.type==='in'?'+':'\u2212') + fmtAmt(tx.amount, tx.currency);
+  document.getElementById('modalAmount').textContent = '\u2212' + fmtAmt(tx.amount, tx.currency);
   document.getElementById('modalDate').textContent   = fmtDateLong(tx.date) + ' \u00B7 ' + tx.accountName;
   document.getElementById('txModal').classList.add('open');
 }
 function closeModal() { document.getElementById('txModal').classList.remove('open'); activeTxId = null; }
 
 function settleTx() {
-  var tx = (data.transactions||[]).find(function(t) { return t.id === activeTxId; });
-  if (tx) {
-    tx.pending = false;
-    applyTxToBalance(tx, 1);
-    save();
+  if (typeof activeTxId === 'string' && activeTxId.indexOf('sub__') === 0) {
+    var subId = activeTxId.replace('sub__', '');
+    var sub = (data.subscriptions||[]).find(function(s) { return s.id === subId; });
+    if (sub) {
+      var acc = allAccounts().find(function(a) { return a.name === sub.accountName; });
+      if (acc) acc.balance -= sub.amount;
+      data.transactions = data.transactions || [];
+      data.transactions.push({
+        id: uid(), type: 'out', currency: sub.currency, amount: sub.amount,
+        category: 'Subscriptions', note: sub.name, date: sub.nextDate,
+        accountId: acc ? acc.id : null, accountName: sub.accountName || '',
+        pending: false,
+      });
+      advanceSubDate(sub);
+      save();
+    }
+  } else {
+    var tx = (data.transactions||[]).find(function(t) { return t.id === activeTxId; });
+    if (tx) {
+      tx.pending = false;
+      applyTxToBalance(tx, 1);
+      save();
+    }
   }
   closeModal(); renderTrack();
 }
 
 function deletePendingTx() {
-  data.transactions = data.transactions.filter(function(t) { return t.id !== activeTxId; });
-  save(); closeModal(); renderTrack();
+  if (typeof activeTxId === 'string' && activeTxId.indexOf('sub__') === 0) {
+    var subId = activeTxId.replace('sub__', '');
+    var sub = (data.subscriptions||[]).find(function(s) { return s.id === subId; });
+    if (sub) { advanceSubDate(sub); save(); }
+  } else {
+    data.transactions = data.transactions.filter(function(t) { return t.id !== activeTxId; });
+    save();
+  }
+  closeModal(); renderTrack();
 }
 
 document.getElementById('txModal').addEventListener('click', function(e) { if (e.target===this) closeModal(); });
@@ -971,11 +1038,12 @@ function renderHome() {
 
   var weekEnd = new Date(now);
   weekEnd.setDate(weekEnd.getDate()+7);
-  var week = (data.transactions||[]).filter(function(t) {
+  var weekTxs = (data.transactions||[]).filter(function(t) {
     if (!t.pending) return false;
     var d = new Date(t.date+'T00:00:00');
     return d >= now && d <= weekEnd;
-  }).sort(function(a,b) { return a.date.localeCompare(b.date); });
+  });
+  var week = weekTxs.concat(getSubsDue(7)).sort(function(a,b) { return a.date.localeCompare(b.date); });
   document.getElementById('homeWeekMeta').textContent = week.length + ' upcoming';
   document.getElementById('homeWeekList').innerHTML = week.length
     ? week.map(function(tx) { return txRowHTML(tx, false); }).join('')
