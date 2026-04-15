@@ -296,44 +296,29 @@
           <div class="form-label" id="fAccountLabel">Account</div>
           <select class="form-select" id="fAccount" onchange="refreshPockets()"></select>
         </div>
-        <div class="form-cell full" id="fPocketCell">
+        <div class="form-cell" id="fPocketCell">
           <div class="form-label" id="fPocketLabel">Pocket</div>
           <select class="form-select" id="fPocket"></select>
+        </div>
+        <div class="form-cell" id="fCategoryCell">
+          <div class="form-label">Category</div>
+          <select class="form-select" id="fCategory"></select>
         </div>
         <div class="form-cell full" id="fToAccountCell" style="display:none;">
           <div class="form-label">To Account</div>
           <select class="form-select" id="fToAccount"></select>
         </div>
-        <div class="form-cell full">
+        <div class="form-cell">
           <div class="form-label">Amount</div>
           <input class="form-input" id="fAmount" type="text" inputmode="decimal" placeholder="0.00" oninput="fmtNumInput(this)" />
         </div>
-        <div class="form-cell full" id="fCategoryCell">
-          <div class="form-label">Category</div>
-          <select class="form-select" id="fCategory"></select>
+        <div class="form-cell">
+          <div class="form-label">Date</div>
+          <input class="form-select" id="fDate" type="date" style="color:var(--fg);background:none;border:none;outline:none;font-size:13px;" />
         </div>
-      </div>
-      <div class="collapse-toggle" onclick="toggleCollapse()">
-        <span class="collapse-icon" id="collapseIcon">&#9660;</span>
-        Date, note &amp; pending
-      </div>
-      <div class="collapse-body" id="collapseBody">
-        <div class="form-grid">
-          <div class="form-cell">
-            <div class="form-label">Date</div>
-            <input class="form-select" id="fDate" type="date" style="color:var(--fg);background:none;border:none;outline:none;font-size:13px;" />
-          </div>
-          <div class="form-cell">
-            <div class="form-label">Pending</div>
-            <select class="form-select" id="fPending">
-              <option value="false">No</option>
-              <option value="true">Yes</option>
-            </select>
-          </div>
-          <div class="form-cell full">
-            <div class="form-label">Note</div>
-            <input class="form-select" id="fNote" type="text" placeholder="Optional" style="color:var(--fg);background:none;border:none;outline:none;font-size:13px;" />
-          </div>
+        <div class="form-cell full">
+          <div class="form-label">Note</div>
+          <input class="form-select" id="fNote" type="text" placeholder="Optional" style="color:var(--fg);background:none;border:none;outline:none;font-size:13px;" />
         </div>
       </div>
       <button class="add-btn" onclick="addTransaction()">Add Transaction</button>
@@ -588,6 +573,49 @@
   </div>
 </div>
 
+<!-- EDIT TX MODAL -->
+<div class="vmodal-overlay" id="modalEditTx">
+  <div class="vmodal">
+    <div class="vmodal-head">
+      <div class="vmodal-title">Edit Transaction</div>
+      <button class="vmodal-close" onclick="closeEditModal()">&#215;</button>
+    </div>
+    <div class="vmodal-body">
+      <div class="vmodal-cell">
+        <div class="vmodal-label">Currency</div>
+        <select class="vmodal-select" id="eCurrency" onchange="refreshEditAccounts()">
+          <option value="EUR">EUR</option>
+          <option value="IDR">IDR</option>
+        </select>
+      </div>
+      <div class="vmodal-cell">
+        <div class="vmodal-label" id="eAccountLabel">Account</div>
+        <select class="vmodal-select" id="eAccount"></select>
+      </div>
+      <div class="vmodal-cell">
+        <div class="vmodal-label">Category</div>
+        <select class="vmodal-select" id="eCategory"></select>
+      </div>
+      <div class="vmodal-cell">
+        <div class="vmodal-label">Amount</div>
+        <input class="vmodal-input large" id="eAmount" type="text" inputmode="decimal" placeholder="0.00" oninput="fmtNumInput(this)" />
+      </div>
+      <div class="vmodal-cell">
+        <div class="vmodal-label">Date</div>
+        <input class="vmodal-input" id="eDate" type="date" style="color:var(--fg);font-size:14px;" />
+      </div>
+      <div class="vmodal-cell">
+        <div class="vmodal-label">Note</div>
+        <input class="vmodal-input" id="eNote" type="text" placeholder="Optional" />
+      </div>
+    </div>
+    <div class="vmodal-foot">
+      <button class="vmodal-save" onclick="saveEditTx()">Save</button>
+      <button class="vmodal-del visible" onclick="deleteEditTx()">Delete</button>
+    </div>
+  </div>
+</div>
+
 <!-- PENDING TX MODAL -->
 <div class="modal-overlay" id="txModal">
   <div class="modal">
@@ -794,12 +822,6 @@ function setMode(m) {
   refreshPockets();
 }
 
-function toggleCollapse() {
-  collapseOpen = !collapseOpen;
-  document.getElementById('collapseBody').classList.toggle('open', collapseOpen);
-  document.getElementById('collapseIcon').classList.toggle('open', collapseOpen);
-}
-
 function refreshForm() {
   var cur  = document.getElementById('fCurrency').value;
   var accs = cur === 'IDR' ? (data.idrAccounts||[]) : (data.eurAccounts||[]);
@@ -849,7 +871,7 @@ function addTransaction() {
   var accs      = allAccounts();
   var acc       = accs.find(function(a) { return a.id === accountId; });
   var date      = document.getElementById('fDate').value || today();
-  var pending   = document.getElementById('fPending').value === 'true';
+  var pending   = false;
   var note      = document.getElementById('fNote').value.trim();
   var pocketId  = document.getElementById('fPocket').value || null;
   var pocket    = pocketId ? (data.pockets||[]).find(function(p) { return p.id === pocketId; }) : null;
@@ -858,8 +880,8 @@ function addTransaction() {
     var toAccountId = document.getElementById('fToAccount').value;
     var toAcc = accs.find(function(a) { return a.id === toAccountId; });
     if (!toAccountId || !toAcc) { document.getElementById('fToAccount').focus(); return; }
-    var txOut = { id:uid(), type:'move', currency:currency, amount:amount, category:'Transfer', note:note||('To '+toAcc.name), date:date, accountId:accountId, accountName:acc?acc.name:'', pending:pending, pocketId:pocketId||null };
-    var txIn  = { id:uid(), type:'move', currency:currency, amount:amount, category:'Transfer', note:note||('From '+(acc?acc.name:'')), date:date, accountId:toAccountId, accountName:toAcc.name, pending:pending, pocketId:null };
+    var txOut = { id:uid(), type:'move', currency:currency, amount:amount, category:'Transfer', note:note||('To '+toAcc.name), date:date, accountId:accountId, accountName:acc?acc.name:'', pending:pending, pocketId:pocketId||null, addedAt:Date.now() };
+    var txIn  = { id:uid(), type:'move', currency:currency, amount:amount, category:'Transfer', note:note||('From '+(acc?acc.name:'')), date:date, accountId:toAccountId, accountName:toAcc.name, pending:pending, pocketId:null, addedAt:Date.now() };
     data.transactions.push(txOut);
     data.transactions.push(txIn);
     if (!pending) {
@@ -867,7 +889,7 @@ function addTransaction() {
       if (toAcc) toAcc.balance += amount;
     }
   } else {
-    var tx = { id:uid(), type:currentMode, currency:currency, amount:amount, category:document.getElementById('fCategory').value, note:note, date:date, accountId:accountId, accountName:acc?acc.name:'', pending:pending, pocketId:pocketId||null, pocketName:pocket?pocket.name:null };
+    var tx = { id:uid(), type:currentMode, currency:currency, amount:amount, category:document.getElementById('fCategory').value, note:note, date:date, accountId:accountId, accountName:acc?acc.name:'', pending:pending, pocketId:pocketId||null, pocketName:pocket?pocket.name:null, addedAt:Date.now() };
     data.transactions.push(tx);
     if (!pending && acc) {
       if (currentMode === 'in')  acc.balance += amount;
@@ -877,7 +899,6 @@ function addTransaction() {
 
   save();
   document.getElementById('fAmount').value = '';
-  document.getElementById('fNote').value   = '';
   renderTrack();
 }
 
@@ -885,12 +906,12 @@ function txRowHTML(tx, showDel) {
   var sign = tx.type==='in' ? '+' : tx.type==='move' ? '\u2194' : '\u2212';
   var cls  = tx.type==='in' ? 'in' : tx.type==='move' ? 'move' : 'out';
   var sub  = [tx.note, tx.pocketName].filter(Boolean).join(' \u00B7 ');
-  var click = tx.pending ? ' onclick="openModal(this.dataset.id)"' : '';
+  var click = tx.pending ? ' onclick="openModal(this.dataset.id)"' : ' onclick="openEditModal(this.dataset.id)"';
   return '<div class="tx-row" data-id="'+tx.id+'"'+click+'>' +
     '<div class="tx-dot '+(tx.pending?'pending':tx.type)+'"></div>' +
     '<div class="tx-main"><div class="tx-cat">'+tx.category+'</div>'+(sub?'<div class="tx-note">'+sub+'</div>':'')+'</div>' +
     '<div class="tx-right"><div class="tx-amount '+cls+'">'+sign+fmtAmt(tx.amount,tx.currency)+'</div><div class="tx-date">'+fmtDate(tx.date)+' \u00B7 '+tx.accountName+'</div></div>' +
-    (showDel ? '<button class="tx-del" onclick="deleteTx(this.parentNode.dataset.id,event)">\u00D7</button>' : '') +
+    '' +
   '</div>';
 }
 
@@ -907,7 +928,7 @@ function renderTrack() {
     : '<div class="empty">No pending transactions</div>';
 
   var recent = (data.transactions||[]).filter(function(t) { return !t.pending; })
-    .sort(function(a,b) { return b.date.localeCompare(a.date); }).slice(0,10);
+    .sort(function(a,b) { return (b.addedAt||0) - (a.addedAt||0); }).slice(0,10);
   document.getElementById('recentMeta').textContent = recent.length + ' transactions';
   document.getElementById('recentList').innerHTML = recent.length
     ? recent.map(function(tx) { return txRowHTML(tx, true); }).join('')
@@ -1367,6 +1388,96 @@ function deleteInvestment() {
   data.investments = (data.investments||[]).filter(function(x) { return x.id!==vEditId; });
   save(); closeVModal('modalInv'); renderVault();
 }
+
+// ─── Edit TX modal ───
+var editTxId = null;
+
+function openEditModal(id) {
+  var tx = (data.transactions||[]).find(function(t) { return t.id === id; });
+  if (!tx) return;
+  editTxId = id;
+
+  // Populate currency
+  document.getElementById('eCurrency').value = tx.currency || 'EUR';
+
+  // Populate accounts for this currency
+  refreshEditAccounts();
+  document.getElementById('eAccount').value = tx.accountId || '';
+
+  // Populate categories
+  var type = tx.type === 'in' ? 'income' : 'expense';
+  var cats = (data.categories||[]).filter(function(c) { return c.type === type; });
+  document.getElementById('eCategory').innerHTML = cats.map(function(c) {
+    return '<option value="'+c.name+'">'+c.name+'</option>';
+  }).join('');
+  document.getElementById('eCategory').value = tx.category || '';
+
+  document.getElementById('eAmount').value = fmtForInput(tx.amount);
+  document.getElementById('eDate').value   = tx.date || today();
+  document.getElementById('eNote').value   = tx.note || '';
+
+  document.getElementById('eAccountLabel').textContent = tx.type === 'move' ? 'Account' : 'Account';
+  document.getElementById('modalEditTx').classList.add('open');
+}
+
+function refreshEditAccounts() {
+  var cur  = document.getElementById('eCurrency').value;
+  var accs = cur === 'IDR' ? (data.idrAccounts||[]) : (data.eurAccounts||[]);
+  document.getElementById('eAccount').innerHTML = accs.map(function(a) {
+    return '<option value="'+a.id+'">'+a.name+'</option>';
+  }).join('');
+}
+
+function closeEditModal() {
+  document.getElementById('modalEditTx').classList.remove('open');
+  editTxId = null;
+}
+
+function saveEditTx() {
+  var tx = (data.transactions||[]).find(function(t) { return t.id === editTxId; });
+  if (!tx) return;
+
+  var newAmount   = parseNum('eAmount');
+  var newAccId    = document.getElementById('eAccount').value;
+  var newCurrency = document.getElementById('eCurrency').value;
+  var newCategory = document.getElementById('eCategory').value;
+  var newDate     = document.getElementById('eDate').value || today();
+  var newNote     = document.getElementById('eNote').value.trim();
+  var accs        = allAccounts();
+  var newAcc      = accs.find(function(a) { return a.id === newAccId; });
+
+  // Reverse old balance effect
+  applyTxToBalance(tx, -1);
+
+  // Update transaction
+  tx.amount      = newAmount;
+  tx.accountId   = newAccId;
+  tx.accountName = newAcc ? newAcc.name : tx.accountName;
+  tx.currency    = newCurrency;
+  tx.category    = newCategory;
+  tx.date        = newDate;
+  tx.note        = newNote;
+
+  // Apply new balance effect
+  applyTxToBalance(tx, 1);
+
+  save();
+  closeEditModal();
+  renderTrack();
+}
+
+function deleteEditTx() {
+  var tx = (data.transactions||[]).find(function(t) { return t.id === editTxId; });
+  if (tx) applyTxToBalance(tx, -1);
+  data.transactions = (data.transactions||[]).filter(function(t) { return t.id !== editTxId; });
+  save();
+  closeEditModal();
+  renderTrack();
+}
+
+document.getElementById('modalEditTx').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
 
 // ─── Init ───
 (function init() {
