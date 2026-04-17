@@ -912,7 +912,7 @@ function txRowHTML(tx) {
   var sign  = tx.type === 'in' ? '+' : tx.type === 'move' ? '\u2194' : '\u2212';
   var cls   = tx.type === 'in' ? 'in' : tx.type === 'move' ? 'move' : 'out';
   var sub   = [tx.note, tx.pocketName].filter(Boolean).join(' \u00B7 ');
-  var click = tx.pending ? ' onclick="openModal(this.dataset.id)"' : ' onclick="openEditModal(this.dataset.id)"';
+  var click = tx.pending ? ' onclick="openModal(\'' + tx.id + '\')"' : ' onclick="openEditModal(\'' + tx.id + '\')"';
   return '<div class="tx-row" data-id="' + tx.id + '"' + click + '>' +
     '<div class="tx-dot ' + (tx.pending ? 'pending' : tx.type) + '"></div>' +
     '<div class="tx-main"><div class="tx-cat">' + tx.category + '</div>' + (sub ? '<div class="tx-note">' + sub + '</div>' : '') + '</div>' +
@@ -1100,23 +1100,23 @@ function renderVault() {
     var unallocFmt = fmtAmt((a.balance || 0) - pocketSum, a.currency);
 
     var pocketRows = accPockets.map(function(p) {
-      return '<div class="pocket-row" data-aid="' + a.id + '" data-pid="' + p.id + '" onclick="openPocketModal(this.dataset.aid,this.dataset.pid)">' +
+      return '<div class="pocket-row" onclick="openPocketModal(\'' + a.id + '\',\'' + p.id + '\')">' +
         '<div><div class="pocket-name">' + p.name + '</div>' + (p.note ? '<div class="pocket-note">' + p.note + '</div>' : '') + '</div>' +
         '<div class="pocket-balance">' + fmtAmt(p.balance, a.currency) + '</div></div>';
     }).join('');
 
     var footerBtns =
-      '<button class="pocket-edit-btn" data-aid="' + a.id + '" onclick="event.stopPropagation();openReconcileModal(this.dataset.aid)">Reconcile</button>' +
-      '<button class="pocket-edit-btn" data-aid="' + a.id + '" data-cur="' + a.currency + '" onclick="event.stopPropagation();openVModal(\'modalAccount\',this.dataset.aid,this.dataset.cur)">Edit</button>';
+      '<button class="pocket-edit-btn" onclick="event.stopPropagation();openReconcileModal(\'' + a.id + '\')">Reconcile</button>' +
+      '<button class="pocket-edit-btn" onclick="event.stopPropagation();openVModal(\'modalAccount\',\'' + a.id + '\',\'' + a.currency + '\')">Edit</button>';
 
     var inner = accPockets.length
       ? '<div class="pocket-unallocated"><div class="pocket-unallocated-label">Unallocated</div><div class="pocket-unallocated-val">' + unallocFmt + '</div></div>' +
         pocketRows +
-        '<div class="pocket-footer"><button class="pocket-add-btn" data-aid="' + a.id + '" onclick="openPocketModal(this.dataset.aid)">+ Add pocket</button><div style="display:flex;gap:16px;">' + footerBtns + '</div></div>'
-      : '<div style="padding:10px 0;display:flex;justify-content:space-between;align-items:center;"><button class="pocket-add-btn" data-aid="' + a.id + '" onclick="openPocketModal(this.dataset.aid)">+ Add pocket</button><div style="display:flex;gap:16px;">' + footerBtns + '</div></div>';
+        '<div class="pocket-footer"><button class="pocket-add-btn" onclick="openPocketModal(\'' + a.id + '\')">+ Add pocket</button><div style="display:flex;gap:16px;">' + footerBtns + '</div></div>'
+      : '<div style="padding:10px 0;display:flex;justify-content:space-between;align-items:center;"><button class="pocket-add-btn" onclick="openPocketModal(\'' + a.id + '\')">+ Add pocket</button><div style="display:flex;gap:16px;">' + footerBtns + '</div></div>';
 
     return '<div class="account-row">' +
-      '<div class="account-summary" data-id="' + a.id + '" onclick="toggleAccount(this.dataset.id)">' +
+      '<div class="account-summary" onclick="toggleAccount(\'' + a.id + '\')">' +
         '<div><div class="account-name">' + a.name + '</div><div class="account-sub">' + a.currency + (a.note ? ' \u00B7 ' + a.note : '') + '</div></div>' +
         '<div style="display:flex;align-items:center;gap:12px;"><div class="account-balance">' + bal + '</div><div class="account-chevron' + (isOpen ? ' open' : '') + '" id="chevron-' + a.id + '">&#9660;</div></div>' +
       '</div>' +
@@ -1139,7 +1139,7 @@ function renderVault() {
   document.getElementById('vaultDebts').innerHTML = debtCount ? (data.debts || []).map(function(d) {
     var paid = (d.totalMonths || 0) - (d.months || 0);
     var pct  = d.total ? Math.round(((d.total - d.remaining) / d.total) * 100) : 0;
-    return '<div class="debt-row vault-row-clickable" data-id="' + d.id + '" onclick="openVModal(\'modalDebt\',this.dataset.id)">' +
+    return '<div class="debt-row vault-row-clickable" onclick="openVModal(\'modalDebt\',\'' + d.id + '\')">' +
       '<div class="debt-main"><div><div class="debt-name">' + d.name + '</div><div class="debt-detail">' + paid + ' of ' + d.totalMonths + ' months paid</div></div>' +
       '<div><div class="debt-remaining">' + fmtAmt(d.remaining, d.currency) + '</div><div class="debt-monthly">' + fmtAmt(d.monthly, d.currency) + ' / mo</div></div></div>' +
       '<div class="debt-bar"><div class="debt-bar-fill" style="width:' + pct + '%"></div></div></div>';
@@ -1154,7 +1154,7 @@ function renderVault() {
   document.getElementById('subsCardTotal').style.color = subsCount ? 'var(--fg)' : 'var(--muted)';
   document.getElementById('subsCardMeta').textContent  = subsCount ? subsCount + (subsCount === 1 ? ' subscription' : ' subscriptions') : 'No subscriptions';
   document.getElementById('vaultSubs').innerHTML = subsCount ? (data.subscriptions || []).map(function(s) {
-    return '<div class="sub-row vault-row-clickable" data-id="' + s.id + '" onclick="openVModal(\'modalSub\',this.dataset.id)">' +
+    return '<div class="sub-row vault-row-clickable" onclick="openVModal(\'modalSub\',\'' + s.id + '\')">' +
       '<div><div class="sub-name">' + s.name + '</div><div class="sub-detail">' + (s.renewal || '') + (s.accountName ? ' \u00B7 ' + s.accountName : '') + '</div></div>' +
       '<div><div class="sub-amount">' + fmtAmt(s.amount, s.currency) + '</div><div class="sub-next">next ' + fmtDate(s.nextDate) + '</div></div></div>';
   }).join('') : '<div class="empty">No subscriptions</div>';
@@ -1172,7 +1172,7 @@ function renderVault() {
     var gain    = (i.currentValue || 0) - (i.totalInvested || 0);
     var gainPct = i.totalInvested ? ((gain / i.totalInvested) * 100).toFixed(1) : '0.0';
     var isUp    = gain >= 0;
-    return '<div class="inv-row vault-row-clickable" data-id="' + i.id + '" onclick="openVModal(\'modalInv\',this.dataset.id)">' +
+    return '<div class="inv-row vault-row-clickable" onclick="openVModal(\'modalInv\',\'' + i.id + '\')">' +
       '<div class="inv-main"><div><div class="inv-name">' + i.name + '</div><div class="inv-type">' + (i.type || '') + '</div></div>' +
       '<div><div class="inv-value' + (isUp ? ' up' : '') + '">' + fmtAmt(i.currentValue, i.currency) + '</div><div class="inv-gain' + (isUp ? ' up' : ' down') + '">' + (isUp ? '+' : '') + fmtAmt(Math.abs(gain), i.currency) + ' (' + (isUp ? '+' : '') + gainPct + '%)</div></div></div>' +
       (i.monthlyAmount ? '<div class="inv-monthly">' + fmtAmt(i.monthlyAmount, i.currency) + ' / mo sparplan</div>' : '') +
