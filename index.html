@@ -8,19 +8,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-  button, select, input, a {
-    -webkit-tap-highlight-color: transparent;
-    outline: none;
-  }
-  button:focus, select:focus, input:focus { outline: none; }
+  button, select, input, a { -webkit-tap-highlight-color: transparent; outline: none; }
 
   :root {
     --bg:    #000000;
-    --s1:    #000000;
-    --s2:    #000000;
     --b1:    #0D0D0D;
-    --b2:    #141414;
     --fg:    #F2F2F2;
     --muted: #555555;
     --dim:   #2A2A2A;
@@ -29,43 +21,26 @@
     --red:   #FF6B6B;
     --amber: #FFD166;
     --blue:  #60A5FA;
-    --font-display: 'Martian Mono', monospace;
-    --font-mono:    'Martian Mono', monospace;
-    --font-body:    'Manrope', sans-serif;
+    --mono:  'Martian Mono', monospace;
+    --body:  'Manrope', sans-serif;
   }
 
   html, body {
-    background: #000000;
+    background: var(--bg);
     color: var(--fg);
-    font-family: 'Manrope', sans-serif;
+    font-family: var(--body);
     font-size: 15px;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;
-    -webkit-tap-highlight-color: transparent;
   }
 
-  .app {
-    max-width: 430px;
-    margin: 0 auto;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-  }
+  .app { max-width: 430px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; position: relative; }
 
-  /* ─── Tabs ─── */
-  .tab {
-    display: none;
-    flex: 1;
-    overflow-y: auto;
-    padding-bottom: 96px;
-    scrollbar-width: none;
-  }
+  .tab { display: none; flex: 1; overflow-y: auto; padding-bottom: 96px; scrollbar-width: none; }
   .tab::-webkit-scrollbar { display: none; }
   .tab.active { display: block; }
 
-  /* ─── Animations ─── */
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -77,968 +52,254 @@
   .a5 { animation: fadeUp 0.4s 0.21s ease both; }
 
   /* ─── Header ─── */
-  .header {
-    padding: 52px 24px 20px;
-  }
-  .wordmark {
-    font-family: var(--font-display);
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .header-date {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 3px;
-    letter-spacing: 0.05em;
-  }
+  .header   { padding: 52px 24px 20px; }
+  .wordmark { font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
 
-  /* ─── Mode strip ─── */
-  .mode-strip {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    margin-bottom: 1px;
-  }
-  .mode-btn {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-family: var(--font-display);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    padding: 11px 0;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-    text-align: center;
-  }
+  /* ─── Track form ─── */
+  .mode-strip { display: grid; grid-template-columns: 1fr 1fr 1fr; margin-bottom: 1px; }
+  .mode-btn { background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 11px 0; cursor: pointer; transition: background 0.15s, color 0.15s; text-align: center; }
   .mode-btn.active { background: var(--fg); color: var(--bg); }
-  .tx-row { cursor: pointer; }
-  .vault-row-clickable { cursor: pointer; }
-  .sub-row { cursor: pointer; }
-  .debt-row { cursor: pointer; }
-  .inv-row { cursor: pointer; }
   .mode-btn:not(.active):hover { color: var(--fg); }
 
-  /* ─── Form grid ─── */
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px;
-    background: var(--line);
-    border: 1px solid var(--line);
-    border-top: none;
-  }
-  .form-cell {
-    background: var(--s1);
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
+  .form-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .form-cell  { background: var(--bg); padding: 14px 16px; display: flex; flex-direction: column; gap: 5px; }
   .form-cell.full { grid-column: 1 / -1; }
-  .form-label {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .form-input {
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--fg);
-    font-family: var(--font-mono);
-    font-size: 18px;
-    font-weight: 400;
-    width: 100%;
-    padding: 0;
-  }
+  .form-label { font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+  .form-input { background: none; border: none; outline: none; color: var(--fg); font-family: var(--mono); font-size: 18px; font-weight: 400; width: 100%; padding: 0; }
   .form-input::placeholder { color: var(--dim); }
-  .form-select {
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--fg);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 500;
-    width: 100%;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-  }
-  .form-select option { background: var(--s2); color: var(--fg); }
+  .form-select { background: none; border: none; outline: none; color: var(--fg); font-family: var(--body); font-size: 13px; font-weight: 500; width: 100%; cursor: pointer; appearance: none; -webkit-appearance: none; }
+  .form-select option { background: var(--bg); color: var(--fg); }
 
-  .collapse-toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 11px 16px;
-    background: var(--s1);
-    border: 1px solid var(--line);
-    border-top: none;
-    cursor: pointer;
-    color: var(--muted);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    transition: color 0.15s;
-    user-select: none;
-  }
-  .collapse-toggle:hover { color: var(--fg); }
-  .collapse-icon { transition: transform 0.2s; font-size: 8px; display: inline-block; }
-  .collapse-icon.open { transform: rotate(180deg); }
-
-  .collapse-body {
-    overflow: hidden;
-    max-height: 0;
-    transition: max-height 0.25s ease;
-  }
-  .collapse-body.open { max-height: 300px; }
-
-  .add-btn {
-    width: 100%;
-    background: var(--fg);
-    color: var(--bg);
-    border: none;
-    padding: 16px;
-    font-family: var(--font-display);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    cursor: pointer;
-    margin-top: 1px;
-    transition: opacity 0.15s;
-  }
-  .add-btn:hover { opacity: 0.85; }
+  .add-btn { width: 100%; background: var(--fg); color: var(--bg); border: none; padding: 16px; font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; }
+  .add-btn:hover  { opacity: 0.85; }
   .add-btn:active { opacity: 0.7; }
 
-  /* ─── Section ─── */
-  .section { padding: 32px 24px 0; }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 14px;
-  }
-  .section-title {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .section-meta {
-    font-size: 10px;
-    color: var(--dim);
-    letter-spacing: 0.06em;
-  }
-  .section-add {
-    background: none;
-    border: 1px solid var(--dim);
-    color: var(--muted);
-    font-family: var(--font-display);
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    padding: 5px 10px;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
-  }
+  /* ─── Sections ─── */
+  .section        { padding: 32px 24px 0; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-title  { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  .section-meta   { font-size: 10px; color: var(--dim); letter-spacing: 0.06em; }
+  .section-add    { background: none; border: 1px solid var(--dim); color: var(--muted); font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 5px 10px; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
   .section-add:hover { border-color: var(--fg); color: var(--fg); }
 
   /* ─── Transaction rows ─── */
   .tx-list { display: flex; flex-direction: column; }
-
-  .tx-row {
-    display: flex;
-    align-items: center;
-    padding: 13px 8px;
-    border-bottom: 1px solid var(--line);
-    gap: 12px;
-    margin: 0 -8px;
-    border-radius: 1px;
-    cursor: pointer;
-    transition: background 0.12s;
-  }
+  .tx-row  { display: flex; align-items: center; padding: 13px 8px; border-bottom: 1px solid var(--line); gap: 12px; margin: 0 -8px; border-radius: 1px; cursor: pointer; transition: background 0.12s; }
   .tx-row:last-child { border-bottom: none; }
-
-  .tx-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+  .tx-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
   .tx-dot.pending { background: none; border: 1.5px solid var(--amber); }
   .tx-dot.out     { background: var(--red); }
   .tx-dot.in      { background: var(--green); }
   .tx-dot.move    { background: var(--blue); }
-
-  .tx-main { flex: 1; min-width: 0; }
-  .tx-cat {
-    font-size: 13px;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .tx-note {
-    font-size: 10px;
-    font-family: var(--font-body);
-    color: var(--muted);
-    margin-top: 1px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
+  .tx-main  { flex: 1; min-width: 0; }
+  .tx-cat   { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tx-note  { font-size: 10px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tx-right { text-align: right; flex-shrink: 0; }
-  .tx-amount {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    font-weight: 400;
-  }
+  .tx-amount      { font-family: var(--mono); font-size: 13px; font-weight: 400; }
   .tx-amount.out  { color: var(--red); }
   .tx-amount.in   { color: var(--green); }
   .tx-amount.move { color: var(--blue); }
-  .tx-date { font-family: var(--font-body); font-size: 10px; color: var(--muted); margin-top: 2px; }
-
-  .tx-del {
-    background: none;
-    border: none;
-    color: var(--dim);
-    font-size: 18px;
-    cursor: pointer;
-    padding: 2px 4px;
-    line-height: 1;
-    flex-shrink: 0;
-    transition: color 0.15s;
-  }
-  .tx-del:hover { color: var(--red); }
+  .tx-date  { font-family: var(--body); font-size: 10px; color: var(--muted); margin-top: 2px; }
 
   /* ─── Home: balance card ─── */
-  .balance-card {
-    margin: 4px 24px 0;
-    padding: 28px 24px 24px;
-    border: 1px solid var(--line);
-    background: var(--s1);
-    position: relative;
-    overflow: hidden;
-  }
-  .balance-card::before {
-    content:'';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse at 50% -20%, rgba(255,255,255,0.03) 0%, transparent 70%);
-    pointer-events: none;
-  }
-  .balance-label {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 8px;
-  }
-  .balance-net { font-family: var(--font-mono); font-size: 40px; font-weight: 600; line-height: 1; letter-spacing: -0.02em; }
-  .balance-net sup { font-size: 16px; font-weight: 400; vertical-align: super; color: var(--muted); letter-spacing: 0; }
-  .balance-divider { height: 1px; background: var(--line); margin: 20px 0; }
-  .balance-row { display: flex; align-items: stretch; }
-  .balance-cell { flex: 1; }
-  .balance-divider-v { width: 1px; background: var(--line); flex-shrink: 0; margin: 0 16px; }
-  .balance-cell-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
-  .balance-cell-value { font-family: var(--font-mono); font-size: 13px; font-weight: 400; white-space: nowrap; }
-  .balance-cell-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
-  .spending-total { font-family: var(--font-mono); font-size: 26px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 20px; }
-  .spending-total span { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 8px; font-family: var(--font-body); letter-spacing: 0; }
-  .cat-amount { font-family: var(--font-mono); font-size: 12px; font-weight: 400; }
-  .vault-hero-amount { font-family: var(--font-mono); font-size: 40px; font-weight: 600; line-height: 1; letter-spacing: -0.02em; }
-  .vault-hero-amount sup { font-size: 16px; font-weight: 400; vertical-align: super; color: var(--muted); letter-spacing: 0; }
-  .account-balance { font-family: var(--font-mono); font-size: 13px; font-weight: 400; }
-  .pocket-balance { font-family: var(--font-mono); font-size: 12px; font-weight: 400; color: var(--fg); text-align: right; }
-  .pocket-unallocated-val { font-family: var(--font-mono); font-size: 12px; font-weight: 400; color: var(--muted); }
-  .debt-remaining { font-family: var(--font-mono); font-size: 13px; font-weight: 400; color: var(--red); text-align: right; }
-  .sub-amount { font-family: var(--font-mono); font-size: 13px; font-weight: 400; text-align: right; }
-  .inv-value { font-family: var(--font-mono); font-size: 13px; font-weight: 400; text-align: right; }
-  .tx-amount { font-family: var(--font-mono); font-size: 13px; font-weight: 400; }
+  .balance-card { margin: 4px 24px 0; padding: 28px 24px 24px; border: 1px solid var(--line); background: var(--bg); position: relative; overflow: hidden; }
+  .balance-card::before { content:''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% -20%, rgba(255,255,255,0.03) 0%, transparent 70%); pointer-events: none; }
+  .balance-label       { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .balance-net         { font-family: var(--mono); font-size: 40px; font-weight: 600; line-height: 1; letter-spacing: -0.02em; }
+  .balance-net sup     { font-size: 16px; font-weight: 400; vertical-align: super; color: var(--muted); letter-spacing: 0; }
+  .balance-divider     { height: 1px; background: var(--line); margin: 20px 0; }
+  .balance-row         { display: flex; align-items: stretch; }
+  .balance-cell        { flex: 1; }
+  .balance-divider-v   { width: 1px; background: var(--line); flex-shrink: 0; margin: 0 16px; }
+  .balance-cell-label  { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  .balance-cell-value  { font-family: var(--mono); font-size: 13px; font-weight: 400; white-space: nowrap; }
+  .balance-cell-sub    { font-size: 10px; color: var(--muted); margin-top: 2px; }
 
   /* ─── Home: spending ─── */
-  .spending-total span {
-    font-size: 12px;
-    font-weight: 400;
-    color: var(--muted);
-    margin-left: 8px;
-    font-family: var(--font-body);
-    letter-spacing: 0;
-  }
-  .cat-list { display: flex; flex-direction: column; gap: 14px; }
-  .cat-row-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 6px;
-  }
-  .cat-name { font-size: 12px; font-weight: 500; }
-  .cat-amount { font-family: var(--font-display); font-size: 12px; font-weight: 600; }
-  .cat-bar-bg { height: 2px; background: var(--dim); width: 100%; }
-  .cat-bar-fill { height: 100%; background: var(--fg); transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+  .spending-total      { font-family: var(--mono); font-size: 26px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 20px; }
+  .spending-total span { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 8px; font-family: var(--body); letter-spacing: 0; }
+  .cat-list       { display: flex; flex-direction: column; gap: 14px; }
+  .cat-row-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .cat-name       { font-size: 12px; font-weight: 500; }
+  .cat-amount     { font-family: var(--mono); font-size: 12px; font-weight: 400; }
+  .cat-bar-bg     { height: 2px; background: var(--dim); width: 100%; }
+  .cat-bar-fill   { height: 100%; background: var(--fg); transition: width 0.8s cubic-bezier(.4,0,.2,1); }
 
   /* ─── Home: monthly chart ─── */
-  .monthly-chart {
-    display: flex;
-    align-items: flex-end;
-    gap: 6px;
-    height: 64px;
-    margin-top: 4px;
-  }
-  .month-col {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    height: 100%;
-    justify-content: flex-end;
-  }
+  .monthly-chart  { display: flex; align-items: flex-end; gap: 6px; height: 64px; margin-top: 4px; }
+  .month-col      { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
   .month-bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
-  .month-bar { width: 100%; background: var(--dim); min-height: 2px; }
+  .month-bar      { width: 100%; background: var(--dim); min-height: 2px; }
   .month-bar.current { background: var(--fg); }
-  .month-label {
-    font-size: 8px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-    flex-shrink: 0;
-  }
+  .month-label    { font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); flex-shrink: 0; }
 
-  /* ─── Vault: hero ─── */
-  .vault-hero {
-    margin: 4px 24px 0;
-    padding: 28px 24px;
-    border: 1px solid var(--line);
-    background: var(--s1);
-    position: relative;
-    overflow: hidden;
-  }
-  .vault-hero::after {
-    content:'';
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(95,255,160,0.35), transparent);
-  }
-  .vault-hero-label {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 10px;
-  }
-  .vault-hero-amount {
-    font-family: var(--font-mono);
-    font-size: 48px;
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -0.02em;
-  }
-  .vault-hero-amount sup {
-    font-size: 20px;
-    font-weight: 400;
-    vertical-align: super;
-    color: var(--muted);
-    letter-spacing: 0;
-  }
-  .vault-hero-meta {
-    margin-top: 12px;
-    font-size: 11px;
-    color: var(--muted);
-    display: flex;
-    gap: 16px;
-  }
-  .hero-meta-item { display: flex; align-items: center; gap: 5px; }
-  .hero-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
-  .hero-dot.red { background: var(--red); }
-
-  /* ─── Vault allocation card ─── */
-  .vault-alloc-bars {
-    display: flex;
-    gap: 2px;
-    height: 4px;
-    margin: 12px 0 20px;
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .vault-alloc-bar {
-    height: 100%;
-    transition: width 0.8s cubic-bezier(.4,0,.2,1);
-  }
-  .vault-alloc-bar.accounts     { background: var(--fg); }
-  .vault-alloc-bar.investments  { background: var(--green); }
-  .vault-alloc-bar.debts        { background: var(--red); }
-
+  /* ─── Vault: hero / allocation ─── */
+  .vault-hero       { margin: 4px 24px 0; padding: 28px 24px; border: 1px solid var(--line); background: var(--bg); position: relative; overflow: hidden; }
+  .vault-hero::after { content:''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(95,255,160,0.35), transparent); }
+  .vault-hero-label { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .vault-alloc-bars { display: flex; gap: 2px; height: 4px; margin: 12px 0 20px; border-radius: 2px; overflow: hidden; }
+  .vault-alloc-bar  { height: 100%; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+  .vault-alloc-bar.accounts    { background: var(--fg); }
+  .vault-alloc-bar.investments { background: var(--green); }
+  .vault-alloc-bar.debts       { background: var(--red); }
   .vault-alloc-rows { display: flex; flex-direction: column; gap: 10px; }
-
-  .vault-alloc-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
+  .vault-alloc-row  { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .vault-alloc-left { display: flex; align-items: center; gap: 8px; }
-  .vault-alloc-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+  .vault-alloc-dot  { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
   .vault-alloc-dot.accounts    { background: var(--fg); }
   .vault-alloc-dot.investments { background: var(--green); }
   .vault-alloc-dot.debts       { background: var(--red); }
   .vault-alloc-name { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; }
   .vault-alloc-pct  { font-size: 10px; color: var(--dim); margin-left: 4px; }
-  .vault-alloc-val  { font-family: var(--font-display); font-size: 13px; font-weight: 600; }
-  .account-row {
-    border-bottom: 1px solid var(--line);
-  }
+  .vault-alloc-val  { font-family: var(--mono); font-size: 13px; font-weight: 600; }
+
+  /* ─── Vault: accounts ─── */
+  .account-row     { border-bottom: 1px solid var(--line); }
   .account-row:last-child { border-bottom: none; }
-
-  .account-name { font-size: 15px; font-weight: 600; font-family: 'Space Grotesk', sans-serif; }
-  .account-sub  { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 0.04em; font-family: 'Space Grotesk', sans-serif; }
-  .account-balance { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 400; }
-
-  /* ─── Account accordion ─── */
-  .account-summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 0;
-    cursor: pointer;
-    transition: background 0.12s;
-    border-radius: 1px;
-    user-select: none;
-  }
-
-  .account-chevron {
-    font-size: 9px;
-    color: var(--muted);
-    transition: transform 0.2s;
-    flex-shrink: 0;
-    margin-left: 10px;
-  }
+  .account-name    { font-size: 15px; font-weight: 600; }
+  .account-sub     { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 0.04em; }
+  .account-balance { font-family: var(--mono); font-size: 13px; font-weight: 400; }
+  .account-summary { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; cursor: pointer; border-radius: 1px; user-select: none; }
+  .account-chevron { font-size: 9px; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; margin-left: 10px; }
   .account-chevron.open { transform: rotate(180deg); }
-
-  .pockets-wrap {
-    overflow: hidden;
-    height: 0;
-  }
-  .pockets-wrap.open { height: auto; }
-
-  .pocket-list {
-    border-top: 1px solid var(--line);
-    padding: 0;
-  }
-
-  .pocket-unallocated {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 4px;
-  }
-  .pocket-unallocated-label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .pocket-unallocated-val {
-    font-family: var(--font-display);
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
-  }
-
-  .pocket-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 0;
-    margin-top: 4px;
-    border-top: 1px solid var(--line);
-  }
-  .pocket-edit-btn {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    cursor: pointer;
-    padding: 6px 0;
-    transition: color 0.15s;
-  }
+  .pockets-wrap    { overflow: hidden; height: 0; }
+  .pocket-list     { border-top: 1px solid var(--line); }
+  .pocket-unallocated       { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+  .pocket-unallocated-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .pocket-unallocated-val   { font-family: var(--mono); font-size: 12px; font-weight: 400; color: var(--muted); }
+  .pocket-footer   { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-top: 4px; border-top: 1px solid var(--line); }
+  .pocket-edit-btn { background: none; border: none; color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; padding: 6px 0; transition: color 0.15s; }
   .pocket-edit-btn:hover { color: var(--fg); }
-
-  .pocket-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 0;
-    cursor: pointer;
-    margin: 0 -8px;
-    padding-left: 8px;
-    padding-right: 8px;
-    border-radius: 1px;
-  }
-
-  .pocket-name {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--fg);
-  }
-  .pocket-note {
-    font-size: 10px;
-    color: var(--muted);
-    margin-top: 1px;
-  }
-  .pocket-balance {
-    font-family: var(--font-display);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--fg);
-    text-align: right;
-  }
-
-  .pocket-add-btn {
-    margin: 0;
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    cursor: pointer;
-    padding: 6px 0;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: color 0.15s;
-  }
+  .pocket-row      { display: flex; align-items: center; justify-content: space-between; padding: 10px 8px; cursor: pointer; margin: 0 -8px; border-radius: 1px; }
+  .pocket-name     { font-size: 12px; font-weight: 500; }
+  .pocket-note     { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .pocket-balance  { font-family: var(--mono); font-size: 12px; font-weight: 400; text-align: right; }
+  .pocket-add-btn  { margin: 0; background: none; border: none; color: var(--muted); font-size: 10px; font-weight: 500; letter-spacing: 0.08em; cursor: pointer; padding: 6px 0; display: flex; align-items: center; gap: 5px; transition: color 0.15s; }
   .pocket-add-btn:hover { color: var(--fg); }
 
-  .pocket-divider {
-    width: 1px;
-    height: 14px;
-    background: var(--dim);
-    margin-left: 16px;
-    opacity: 0.5;
-  }
-
-  /* ─── Debt card ─── */
-  .pocket-divider { width: 1px; height: 14px; background: var(--dim); opacity: 0.5; }
-
-  .debt-card {
-    padding: 0;
-    cursor: pointer;
-    user-select: none;
-  }
-  .debt-card-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 4px;
-  }
-  .debt-card-chevron {
-    font-size: 9px;
-    color: var(--muted);
-    transition: transform 0.22s ease;
-  }
+  /* ─── Vault: collapsible cards ─── */
+  .debt-card         { padding: 0; cursor: pointer; user-select: none; }
+  .debt-card-top     { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .debt-card-chevron { font-size: 9px; color: var(--muted); transition: transform 0.22s ease; }
   .debt-card-chevron.open { transform: rotate(180deg); }
-  .debt-card-total {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    font-weight: 400;
-    color: var(--red);
-    margin-bottom: 3px;
-    display: inline;
-  }
-  .debt-card-meta {
-    font-size: 10px;
-    color: var(--muted);
-    font-family: var(--font-body);
-    margin-top: 2px;
-  }
-  .debt-card-body {
-    overflow: hidden;
-    height: 0;
-    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .debt-card-add {
-    display: block;
-    width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
-    border-top: 1px solid var(--line);
-    color: var(--muted);
-    font-family: var(--font-body);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    cursor: pointer;
-    padding: 12px 0 4px;
-    margin-top: 8px;
-    transition: color 0.15s;
-  }
+  .debt-card-total   { font-family: var(--mono); font-size: 13px; font-weight: 400; color: var(--red); margin-bottom: 3px; }
+  .debt-card-meta    { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .debt-card-body    { overflow: hidden; height: 0; transition: height 0.3s cubic-bezier(0.4,0,0.2,1); }
+  .debt-card-add     { display: block; width: 100%; text-align: left; background: none; border: none; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; padding: 12px 0 4px; margin-top: 8px; transition: color 0.15s; }
   .debt-card-add:hover { color: var(--fg); }
+
+  .vault-row-clickable { cursor: pointer; }
+
   /* ─── Vault: debt rows ─── */
-  .debt-row { border-bottom: 1px solid var(--line); padding: 16px 0; }
+  .debt-row      { border-bottom: 1px solid var(--line); padding: 16px 0; }
   .debt-row:last-child { border-bottom: none; }
-  .debt-main { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  .debt-name { font-size: 13px; font-weight: 500; }
-  .debt-detail { font-size: 10px; color: var(--muted); margin-top: 3px; }
-  .debt-remaining { font-family: var(--font-mono); font-size: 13px; font-weight: 400; color: var(--red); text-align: right; }
-  .debt-monthly { font-family: var(--font-body); font-size: 10px; color: var(--muted); margin-top: 2px; text-align: right; }
-  .debt-bar { margin-top: 12px; height: 1px; background: var(--dim); position: relative; }
+  .debt-main     { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .debt-name     { font-size: 13px; font-weight: 500; }
+  .debt-detail   { font-size: 10px; color: var(--muted); margin-top: 3px; }
+  .debt-remaining { font-family: var(--mono); font-size: 13px; font-weight: 400; color: var(--red); text-align: right; }
+  .debt-monthly  { font-size: 10px; color: var(--muted); margin-top: 2px; text-align: right; }
+  .debt-bar      { margin-top: 12px; height: 1px; background: var(--dim); position: relative; }
   .debt-bar-fill { position: absolute; top: 0; left: 0; bottom: 0; background: var(--red); opacity: 0.55; }
 
-  /* ─── Vault: sub rows ─── */
-  .sub-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--line);
-    gap: 12px;
-  }
+  /* ─── Vault: subscription rows ─── */
+  .sub-row      { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); gap: 12px; }
   .sub-row:last-child { border-bottom: none; }
-  .sub-name { font-size: 13px; font-weight: 500; }
-  .sub-detail { font-size: 10px; color: var(--muted); margin-top: 2px; }
-  .sub-amount { font-family: var(--font-mono); font-size: 13px; font-weight: 400; text-align: right; }
-  .sub-next { font-family: var(--font-body); font-size: 10px; color: var(--muted); margin-top: 2px; text-align: right; }
+  .sub-name     { font-size: 13px; font-weight: 500; }
+  .sub-detail   { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .sub-amount   { font-family: var(--mono); font-size: 13px; font-weight: 400; text-align: right; }
+  .sub-next     { font-size: 10px; color: var(--muted); margin-top: 2px; text-align: right; }
 
   /* ─── Vault: investment rows ─── */
-  .inv-row { border-bottom: 1px solid var(--line); padding: 16px 0; }
+  .inv-row      { border-bottom: 1px solid var(--line); padding: 16px 0; }
   .inv-row:last-child { border-bottom: none; }
-  .inv-main { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  .inv-name { font-size: 13px; font-weight: 500; }
-  .inv-type { font-family: var(--font-body); font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 0.06em; text-transform: uppercase; }
-  .inv-value { font-family: var(--font-mono); font-size: 13px; font-weight: 400; text-align: right; }
+  .inv-main     { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .inv-name     { font-size: 13px; font-weight: 500; }
+  .inv-type     { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .inv-value    { font-family: var(--mono); font-size: 13px; font-weight: 400; text-align: right; }
   .inv-value.up { color: var(--green); }
-  .inv-gain { font-family: var(--font-body); font-size: 10px; margin-top: 2px; text-align: right; }
-  .inv-gain.up { color: var(--green); }
+  .inv-gain     { font-size: 10px; margin-top: 2px; text-align: right; }
+  .inv-gain.up  { color: var(--green); }
   .inv-gain.down { color: var(--red); }
-  .inv-monthly { font-family: var(--font-body); font-size: 10px; color: var(--muted); margin-top: 8px; }
+  .inv-monthly  { font-size: 10px; color: var(--muted); margin-top: 8px; }
 
-  /* ─── Empty ─── */
   .empty { padding: 16px 0; font-size: 12px; color: var(--muted); }
 
-  /* ─── Modal ─── */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
+  /* ─── Pending TX modal ─── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; padding: 24px; }
   .modal-overlay.open { display: flex; }
-
-  .modal {
-    background: var(--s1);
-    border: 1px solid var(--b1);
-    width: 100%;
-    max-width: 380px;
-    padding: 28px 24px 24px;
-  }
-  .modal-title {
-    font-family: var(--font-display);
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin-bottom: 20px;
-  }
-  .modal-cat { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
-  .modal-note { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
-  .modal-amount { font-family: var(--font-mono); font-size: 18px; font-weight: 400; margin-bottom: 4px; }
-  .modal-date { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-bottom: 24px; }
-
+  .modal         { background: var(--bg); border: 1px solid var(--b1); width: 100%; max-width: 380px; padding: 28px 24px 24px; }
+  .modal-title   { font-family: var(--mono); font-size: 14px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 20px; }
+  .modal-cat     { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+  .modal-note    { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+  .modal-amount  { font-family: var(--mono); font-size: 18px; font-weight: 400; margin-bottom: 4px; }
+  .modal-date    { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-bottom: 24px; }
   .modal-actions { display: flex; gap: 8px; }
-  .modal-btn {
-    flex: 1;
-    padding: 13px;
-    border: none;
-    font-family: var(--font-display);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: opacity 0.15s;
-  }
-  .modal-btn:hover { opacity: 0.8; }
-  .modal-btn.settle { background: var(--fg); color: var(--bg); }
-  .modal-btn.delete { background: var(--red); color: var(--bg); }
-  .modal-btn.cancel { background: var(--dim); color: var(--fg); }
+  .modal-btn     { flex: 1; padding: 13px; border: none; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; }
+  .modal-btn:hover   { opacity: 0.8; }
+  .modal-btn.settle  { background: var(--fg); color: var(--bg); }
+  .modal-btn.delete  { background: var(--red); color: var(--bg); }
+  .modal-btn.cancel  { background: var(--dim); color: var(--fg); }
 
   /* ─── Bottom nav ─── */
-  .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 430px;
-    background: var(--bg);
-    border-top: 1px solid var(--line);
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    z-index: 100;
-  }
-  .nav-btn {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-family: var(--font-display);
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    padding: 14px 0 18px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    transition: color 0.15s;
-    min-height: 56px;
-  }
+  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: var(--bg); border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr 1fr 1fr; z-index: 100; }
+  .nav-btn    { background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; padding: 14px 0 18px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; transition: color 0.15s; min-height: 56px; }
   .nav-btn.active { color: var(--fg); }
   .nav-btn:hover:not(.active) { color: #888; }
-  .nav-icon {
-    width: 16px;
-    height: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .nav-icon svg {
-    width: 16px;
-    height: 16px;
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 1.5;
-  }
-  .nav-bar {
-    position: absolute;
-    top: -1px;
-    height: 1px;
-    background: var(--fg);
-    transition: left 0.25s cubic-bezier(.4,0,.2,1), width 0.25s;
-    pointer-events: none;
-  }
+  .nav-icon   { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; }
+  .nav-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+  .nav-bar    { position: absolute; top: -1px; height: 1px; background: var(--fg); transition: left 0.25s cubic-bezier(.4,0,.2,1), width 0.25s; pointer-events: none; }
 
   /* ─── Vault modals ─── */
-  .vmodal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.75);
-    z-index: 300;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
+  .vmodal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 300; align-items: center; justify-content: center; padding: 24px; }
   .vmodal-overlay.open { display: flex; }
-
-  .vmodal {
-    background: var(--s1);
-    border: 1px solid var(--b1);
-    width: 100%;
-    max-width: 380px;
-    max-height: 90vh;
-    overflow-y: auto;
-    scrollbar-width: none;
-  }
+  .vmodal         { background: var(--bg); border: 1px solid var(--b1); width: 100%; max-width: 380px; max-height: 90vh; overflow-y: auto; scrollbar-width: none; }
   .vmodal::-webkit-scrollbar { display: none; }
-
-  .vmodal-head {
-    padding: 24px 24px 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-  }
-  .vmodal-title {
-    font-family: var(--font-display);
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-  .vmodal-close {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 20px;
-    cursor: pointer;
-    line-height: 1;
-    padding: 0 0 0 12px;
-    transition: color 0.15s;
-  }
+  .vmodal-head    { padding: 24px 24px 0; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .vmodal-title   { font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+  .vmodal-close   { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1; padding: 0 0 0 12px; transition: color 0.15s; }
   .vmodal-close:hover { color: var(--fg); }
-
-  .vmodal-body {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px;
-    background: var(--line);
-    border-top: 1px solid var(--line);
-  }
-  .vmodal-cell {
-    background: var(--s1);
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
+  .vmodal-body    { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border-top: 1px solid var(--line); }
+  .vmodal-cell    { background: var(--bg); padding: 14px 16px; display: flex; flex-direction: column; gap: 5px; }
   .vmodal-cell.full { grid-column: 1 / -1; }
-  .vmodal-label {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .vmodal-input {
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--fg);
-    font-family: var(--font-body);
-    font-size: 14px;
-    font-weight: 500;
-    width: 100%;
-    padding: 0;
-  }
-  .vmodal-input.large {
-    font-family: var(--font-display);
-    font-size: 22px;
-    font-weight: 600;
-  }
+  .vmodal-label   { font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+  .vmodal-input   { background: none; border: none; outline: none; color: var(--fg); font-family: var(--body); font-size: 14px; font-weight: 500; width: 100%; padding: 0; }
+  .vmodal-input.large { font-family: var(--mono); font-size: 22px; font-weight: 600; }
   .vmodal-input::placeholder { color: var(--dim); }
-  .vmodal-select {
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--fg);
-    font-family: var(--font-body);
-    font-size: 14px;
-    font-weight: 500;
-    width: 100%;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-  }
-  .vmodal-select option { background: var(--s2); color: var(--fg); }
-
-  .vmodal-foot {
-    padding: 1px 0 0;
-    background: var(--line);
-    display: flex;
-    gap: 1px;
-  }
-  .vmodal-save {
-    flex: 1;
-    background: var(--fg);
-    color: var(--bg);
-    border: none;
-    padding: 16px;
-    font-family: var(--font-display);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: opacity 0.15s;
-  }
+  .vmodal-select  { background: none; border: none; outline: none; color: var(--fg); font-family: var(--body); font-size: 14px; font-weight: 500; width: 100%; cursor: pointer; appearance: none; -webkit-appearance: none; }
+  .vmodal-select option { background: var(--bg); color: var(--fg); }
+  .vmodal-foot    { padding: 1px 0 0; background: var(--line); display: flex; gap: 1px; }
+  .vmodal-save    { flex: 1; background: var(--fg); color: var(--bg); border: none; padding: 16px; font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; }
   .vmodal-save:hover { opacity: 0.85; }
-  .vmodal-del {
-    background: var(--red);
-    color: var(--bg);
-    border: none;
-    padding: 16px 20px;
-    font-family: var(--font-display);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: opacity 0.15s;
-    display: none;
-  }
+  .vmodal-del     { background: var(--red); color: var(--bg); border: none; padding: 16px 20px; font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; display: none; }
   .vmodal-del.visible { display: block; }
   .vmodal-del:hover { opacity: 0.85; }
 
-  .vault-row-clickable {
-    cursor: pointer;
-  }
+  /* ─── Reconcile ─── */
+  .recon-row   { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--bg); border-top: 1px solid var(--line); }
+  .recon-label { font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+  .recon-delta { font-family: var(--mono); font-size: 22px; font-weight: 600; }
+  .recon-delta.pos  { color: var(--green); }
+  .recon-delta.neg  { color: var(--red); }
+  .recon-delta.zero { color: var(--muted); }
 
-
-  /* Reconcile delta */
-  .reconcile-delta { grid-column: 1 / -1; background: var(--s1); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); }
-  .reconcile-delta-label { font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
-  .reconcile-delta-val { font-family: var(--font-mono); font-size: 18px; font-weight: 600; }
-  .reconcile-delta-val.positive { color: var(--green); }
-  .reconcile-delta-val.negative { color: var(--red); }
-  .reconcile-delta-val.zero     { color: var(--muted); }
-
-  /* ─── Grain ─── */
-  .grain {
-    pointer-events: none;
-    position: fixed;
-    inset: 0;
-    z-index: 999;
-    opacity: 0.022;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-    background-size: 128px;
-  }
+  /* ─── Grain overlay ─── */
+  .grain { pointer-events: none; position: fixed; inset: 0; z-index: 999; opacity: 0.022; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); background-size: 128px; }
 </style>
 </head>
 <body>
 <div class="grain"></div>
 <div class="app">
 
-  <!-- ═══════════════════════════════════════════
-       TAB: TRACK
-  ═══════════════════════════════════════════ -->
+  <!-- ── TRACK TAB ── -->
   <div class="tab active" id="tab-track">
-
-    <div class="header a1">
-      <div class="wordmark">vault.</div>
-    </div>
-
+    <div class="header a1"><div class="wordmark">vault.</div></div>
     <div style="padding:0 24px;" class="a2">
       <div class="mode-strip">
-        <button class="mode-btn active" id="modeOut" onclick="setMode('out')">Out</button>
-        <button class="mode-btn"        id="modeIn"  onclick="setMode('in')">In</button>
+        <button class="mode-btn active" id="modeOut"  onclick="setMode('out')">Out</button>
+        <button class="mode-btn"        id="modeIn"   onclick="setMode('in')">In</button>
         <button class="mode-btn"        id="modeMove" onclick="setMode('move')">Move</button>
       </div>
-
-      <div class="form-grid" id="formGrid">
+      <div class="form-grid">
         <div class="form-cell">
           <div class="form-label">Currency</div>
           <select class="form-select" id="fCurrency" onchange="refreshForm()">
@@ -1050,53 +311,33 @@
           <div class="form-label" id="fAccountLabel">Account</div>
           <select class="form-select" id="fAccount" onchange="refreshPockets()"></select>
         </div>
-        <div class="form-cell full" id="fPocketCell">
+        <div class="form-cell" id="fPocketCell">
           <div class="form-label" id="fPocketLabel">Pocket</div>
           <select class="form-select" id="fPocket"></select>
+        </div>
+        <div class="form-cell" id="fCategoryCell">
+          <div class="form-label">Category</div>
+          <select class="form-select" id="fCategory"></select>
         </div>
         <div class="form-cell full" id="fToAccountCell" style="display:none;">
           <div class="form-label">To Account</div>
           <select class="form-select" id="fToAccount"></select>
         </div>
-        <div class="form-cell full">
+        <div class="form-cell">
           <div class="form-label">Amount</div>
-          <input class="form-input" id="fAmount" type="number" inputmode="decimal" placeholder="0.00" />
+          <input class="form-input" id="fAmount" type="text" inputmode="decimal" placeholder="0.00" oninput="fmtNumInput(this)" />
         </div>
-        <div class="form-cell full" id="fCategoryCell">
-          <div class="form-label">Category</div>
-          <select class="form-select" id="fCategory"></select>
+        <div class="form-cell">
+          <div class="form-label">Date</div>
+          <input class="form-select" id="fDate" type="date" style="color:var(--fg);background:none;border:none;outline:none;font-size:13px;align-self:flex-start;" />
         </div>
-      </div>
-
-      <div class="collapse-toggle" onclick="toggleCollapse()">
-        <span class="collapse-icon" id="collapseIcon">&#9660;</span>
-        Date, note &amp; pending
-      </div>
-      <div class="collapse-body" id="collapseBody">
-        <div class="form-grid">
-          <div class="form-cell">
-            <div class="form-label">Date</div>
-            <input class="form-select" id="fDate" type="date"
-              style="color:var(--fg);background:none;border:none;outline:none;font-family:var(--font-body);font-size:13px;" />
-          </div>
-          <div class="form-cell">
-            <div class="form-label">Pending</div>
-            <select class="form-select" id="fPending">
-              <option value="false">No</option>
-              <option value="true">Yes</option>
-            </select>
-          </div>
-          <div class="form-cell full">
-            <div class="form-label">Note</div>
-            <input class="form-select" id="fNote" type="text" placeholder="Optional"
-              style="color:var(--fg);background:none;border:none;outline:none;font-family:var(--font-body);font-size:13px;" />
-          </div>
+        <div class="form-cell full">
+          <div class="form-label">Note</div>
+          <input class="form-select" id="fNote" type="text" placeholder="Optional" style="color:var(--fg);background:none;border:none;outline:none;font-size:13px;" />
         </div>
       </div>
-
       <button class="add-btn" onclick="addTransaction()">Add Transaction</button>
     </div>
-
     <div class="section a3">
       <div class="section-header">
         <div class="section-title">Upcoming</div>
@@ -1104,7 +345,6 @@
       </div>
       <div class="tx-list" id="upcomingList"></div>
     </div>
-
     <div class="section a4">
       <div class="section-header">
         <div class="section-title">Recent</div>
@@ -1112,52 +352,43 @@
       </div>
       <div class="tx-list" id="recentList"></div>
     </div>
+  </div>
 
-  </div><!-- /tab-track -->
-
-  <!-- ═══════════════════════════════════════════
-       TAB: HOME
-  ═══════════════════════════════════════════ -->
+  <!-- ── HOME TAB ── -->
   <div class="tab" id="tab-home">
-
-    <div class="header a1">
-      <div class="wordmark">vault.</div>
-    </div>
-
+    <div class="header a1"><div class="wordmark">vault.</div></div>
     <div class="balance-card a2">
       <div class="balance-label">Net Worth</div>
-      <div class="balance-net" id="homeNet"><sup>€</sup>—</div>
+      <div class="balance-net" id="homeNet"><sup>&#8364;</sup>&#8212;</div>
       <div class="balance-divider"></div>
       <div class="balance-row">
         <div class="balance-cell">
           <div class="balance-cell-label">EUR</div>
-          <div class="balance-cell-value" id="homeEur">—</div>
-          <div class="balance-cell-sub" id="homeEurSub">—</div>
+          <div class="balance-cell-value" id="homeEur">&#8212;</div>
+          <div class="balance-cell-sub" id="homeEurSub">&#8212;</div>
         </div>
         <div class="balance-divider-v"></div>
         <div class="balance-cell">
           <div class="balance-cell-label">IDR</div>
-          <div class="balance-cell-value" id="homeIdr">—</div>
-          <div class="balance-cell-sub" id="homeIdrSub">—</div>
+          <div class="balance-cell-value" id="homeIdr">&#8212;</div>
+          <div class="balance-cell-sub" id="homeIdrSub">&#8212;</div>
         </div>
         <div class="balance-divider-v"></div>
         <div class="balance-cell">
           <div class="balance-cell-label">Debts</div>
-          <div class="balance-cell-value" id="homeDebts" style="color:var(--red)">—</div>
-          <div class="balance-cell-sub" id="homeDebtsSub">—</div>
+          <div class="balance-cell-value" id="homeDebts" style="color:var(--red)">&#8212;</div>
+          <div class="balance-cell-sub" id="homeDebtsSub">&#8212;</div>
         </div>
       </div>
     </div>
-
     <div class="section a3">
       <div class="section-header">
         <div class="section-title">Spending</div>
         <div class="section-meta" id="homeSpendMeta"></div>
       </div>
-      <div class="spending-total" id="homeSpendTotal">—<span>this month</span></div>
+      <div class="spending-total" id="homeSpendTotal">&#8212;<span>this month</span></div>
       <div class="cat-list" id="homeCatList"></div>
     </div>
-
     <div class="section a4">
       <div class="section-header">
         <div class="section-title">6-Month Overview</div>
@@ -1165,7 +396,6 @@
       </div>
       <div class="monthly-chart" id="homeMonthly"></div>
     </div>
-
     <div class="section a5">
       <div class="section-header">
         <div class="section-title">This Week</div>
@@ -1173,24 +403,16 @@
       </div>
       <div class="tx-list" id="homeWeekList"></div>
     </div>
+  </div>
 
-  </div><!-- /tab-home -->
-
-  <!-- ═══════════════════════════════════════════
-       TAB: VAULT
-  ═══════════════════════════════════════════ -->
+  <!-- ── VAULT TAB ── -->
   <div class="tab" id="tab-vault">
-
-    <div class="header a1">
-      <div class="wordmark">vault.</div>
-    </div>
-
-    <div class="vault-hero a2" id="vaultHeroCard">
+    <div class="header a1"><div class="wordmark">vault.</div></div>
+    <div class="vault-hero a2">
       <div class="vault-hero-label">Allocation</div>
       <div class="vault-alloc-bars" id="vaultAllocBars"></div>
       <div class="vault-alloc-rows" id="vaultAllocRows"></div>
     </div>
-
     <div class="section a3">
       <div class="section-header">
         <div class="section-title">Accounts</div>
@@ -1198,32 +420,30 @@
       </div>
       <div id="vaultAccounts"></div>
     </div>
-
     <div class="section a3">
-      <div class="debt-card" id="debtCard" onclick="toggleDebtCard()">
+      <div class="debt-card" onclick="toggleDebtCard()">
         <div class="debt-card-top">
           <div class="section-title">Debts</div>
           <div class="debt-card-chevron" id="debtChevron">&#9660;</div>
         </div>
         <div class="debt-card-total" id="debtCardTotal"></div>
-        <div class="debt-card-meta" id="debtCardMeta"></div>
+        <div class="debt-card-meta"  id="debtCardMeta"></div>
       </div>
       <div class="debt-card-body" id="debtCardBody">
         <div style="padding-top:8px;">
-        <div id="vaultDebts"></div>
-        <button class="debt-card-add" onclick="event.stopPropagation();openVModal('modalDebt')">+ Add Debt</button>
+          <div id="vaultDebts"></div>
+          <button class="debt-card-add" onclick="event.stopPropagation();openVModal('modalDebt')">+ Add Debt</button>
         </div>
       </div>
     </div>
-
     <div class="section a4">
-      <div class="debt-card" id="subsCard" onclick="toggleSubsCard()">
+      <div class="debt-card" onclick="toggleSubsCard()">
         <div class="debt-card-top">
           <div class="section-title">Subscriptions</div>
           <div class="debt-card-chevron" id="subsChevron">&#9660;</div>
         </div>
         <div class="debt-card-total" id="subsCardTotal"></div>
-        <div class="debt-card-meta" id="subsCardMeta"></div>
+        <div class="debt-card-meta"  id="subsCardMeta"></div>
       </div>
       <div class="debt-card-body" id="subsCardBody">
         <div style="padding-top:8px;">
@@ -1232,15 +452,14 @@
         </div>
       </div>
     </div>
-
     <div class="section a5">
-      <div class="debt-card" id="invsCard" onclick="toggleInvsCard()">
+      <div class="debt-card" onclick="toggleInvsCard()">
         <div class="debt-card-top">
           <div class="section-title">Investments</div>
           <div class="debt-card-chevron" id="invsChevron">&#9660;</div>
         </div>
         <div class="debt-card-total" id="invsCardTotal"></div>
-        <div class="debt-card-meta" id="invsCardMeta"></div>
+        <div class="debt-card-meta"  id="invsCardMeta"></div>
       </div>
       <div class="debt-card-body" id="invsCardBody">
         <div style="padding-top:8px;">
@@ -1249,12 +468,9 @@
         </div>
       </div>
     </div>
+  </div>
 
-  </div><!-- /tab-vault -->
-
-  <!-- ═══════════════════════════════════════════
-       BOTTOM NAV
-  ═══════════════════════════════════════════ -->
+  <!-- ── BOTTOM NAV ── -->
   <nav class="bottom-nav" id="bottomNav">
     <div class="nav-bar" id="navBar"></div>
     <button class="nav-btn active" id="navTrack" onclick="setTab('track')">
@@ -1270,14 +486,10 @@
       Vault
     </button>
   </nav>
+</div>
 
-</div><!-- /app -->
+<!-- ── VAULT MODALS ── -->
 
-<!-- ═══════════════════════════════════════════
-     VAULT ADD MODALS
-═══════════════════════════════════════════ -->
-
-<!-- Add Account -->
 <div class="vmodal-overlay" id="modalAccount">
   <div class="vmodal">
     <div class="vmodal-head">
@@ -1285,25 +497,10 @@
       <button class="vmodal-close" onclick="closeVModal('modalAccount')">&#215;</button>
     </div>
     <div class="vmodal-body">
-      <div class="vmodal-cell full">
-        <div class="vmodal-label">Name</div>
-        <input class="vmodal-input" id="accName" type="text" placeholder="e.g. N26" />
-      </div>
-      <div class="vmodal-cell">
-        <div class="vmodal-label">Currency</div>
-        <select class="vmodal-select" id="accCurrency">
-          <option value="EUR">EUR</option>
-          <option value="IDR">IDR</option>
-        </select>
-      </div>
-      <div class="vmodal-cell">
-        <div class="vmodal-label">Balance</div>
-        <input class="vmodal-input large" id="accBalance" type="number" inputmode="decimal" placeholder="0.00" />
-      </div>
-      <div class="vmodal-cell full">
-        <div class="vmodal-label">Note</div>
-        <input class="vmodal-input" id="accNote" type="text" placeholder="Optional" />
-      </div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Name</div><input class="vmodal-input" id="accName" type="text" placeholder="e.g. N26" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Currency</div><select class="vmodal-select" id="accCurrency"><option value="EUR">EUR</option><option value="IDR">IDR</option></select></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Balance</div><input class="vmodal-input large" id="accBalance" type="text" inputmode="decimal" placeholder="0.00" oninput="fmtNumInput(this)" /></div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Note</div><input class="vmodal-input" id="accNote" type="text" placeholder="Optional" /></div>
     </div>
     <div class="vmodal-foot">
       <button class="vmodal-save" onclick="saveAccount()">Save</button>
@@ -1312,7 +509,6 @@
   </div>
 </div>
 
-<!-- Add Debt -->
 <div class="vmodal-overlay" id="modalDebt">
   <div class="vmodal">
     <div class="vmodal-head">
@@ -1320,29 +516,11 @@
       <button class="vmodal-close" onclick="closeVModal('modalDebt')">&#215;</button>
     </div>
     <div class="vmodal-body">
-      <div class="vmodal-cell full">
-        <div class="vmodal-label">Name</div>
-        <input class="vmodal-input" id="debtName" type="text" placeholder="e.g. Student Loan" />
-      </div>
-      <div class="vmodal-cell">
-        <div class="vmodal-label">Currency</div>
-        <select class="vmodal-select" id="debtCurrency">
-          <option value="EUR">EUR</option>
-          <option value="IDR">IDR</option>
-        </select>
-      </div>
-      <div class="vmodal-cell">
-        <div class="vmodal-label">Total Amount</div>
-        <input class="vmodal-input large" id="debtTotal" type="number" inputmode="decimal" placeholder="0" />
-      </div>
-      <div class="vmodal-cell">
-        <div class="vmodal-label">Remaining</div>
-        <input class="vmodal-input large" id="debtRemaining" type="number" inputmode="decimal" placeholder="0" />
-      </div>
-      <div class="vmodal-cell">
-        <div class="vmodal-label">Monthly Payment</div>
-        <input class="vmodal-input large" id="debtMonthly" type="number" inputmode="decimal" placeholder="0" />
-      </div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Name</div><input class="vmodal-input" id="debtName" type="text" placeholder="e.g. Student Loan" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Currency</div><select class="vmodal-select" id="debtCurrency"><option value="EUR">EUR</option><option value="IDR">IDR</option></select></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Total Amount</div><input class="vmodal-input large" id="debtTotal" type="text" inputmode="decimal" placeholder="0" oninput="fmtNumInput(this)" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Remaining</div><input class="vmodal-input large" id="debtRemaining" type="text" inputmode="decimal" placeholder="0" oninput="fmtNumInput(this)" /></div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Monthly Payment</div><input class="vmodal-input large" id="debtMonthly" type="text" inputmode="decimal" placeholder="0" oninput="fmtNumInput(this)" /></div>
     </div>
     <div class="vmodal-foot">
       <button class="vmodal-save" onclick="saveDebt()">Save</button>
@@ -1351,7 +529,6 @@
   </div>
 </div>
 
-<!-- Add Subscription -->
 <div class="vmodal-overlay" id="modalSub">
   <div class="vmodal">
     <div class="vmodal-head">
@@ -1359,38 +536,12 @@
       <button class="vmodal-close" onclick="closeVModal('modalSub')">&#215;</button>
     </div>
     <div class="vmodal-body">
-      <div class="vmodal-cell full">
-        <div class="vmodal-label">Name</div>
-        <input class="vmodal-input" id="subName" type="text" placeholder="e.g. Spotify" />
-      </div>
-      <div class="vmodal-cell">
-        <div class="vmodal-label">Currency</div>
-        <select class="vmodal-select" id="subCurrency">
-          <option value="EUR">EUR</option>
-          <option value="IDR">IDR</option>
-        </select>
-      </div>
-      <div class="vmodal-cell">
-        <div class="vmodal-label">Amount</div>
-        <input class="vmodal-input large" id="subAmount" type="number" inputmode="decimal" placeholder="0.00" />
-      </div>
-      <div class="vmodal-cell">
-        <div class="vmodal-label">Renewal</div>
-        <select class="vmodal-select" id="subRenewal">
-          <option value="monthly">Monthly</option>
-          <option value="yearly">Yearly</option>
-          <option value="weekly">Weekly</option>
-        </select>
-      </div>
-      <div class="vmodal-cell">
-        <div class="vmodal-label">Account</div>
-        <select class="vmodal-select" id="subAccount"></select>
-      </div>
-      <div class="vmodal-cell full">
-        <div class="vmodal-label">Next Date</div>
-        <input class="vmodal-input" id="subNextDate" type="date"
-          style="color:var(--fg);font-family:var(--font-body);font-size:14px;" />
-      </div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Name</div><input class="vmodal-input" id="subName" type="text" placeholder="e.g. Spotify" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Currency</div><select class="vmodal-select" id="subCurrency"><option value="EUR">EUR</option><option value="IDR">IDR</option></select></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Amount</div><input class="vmodal-input large" id="subAmount" type="text" inputmode="decimal" placeholder="0.00" oninput="fmtNumInput(this)" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Renewal</div><select class="vmodal-select" id="subRenewal"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="weekly">Weekly</option></select></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Account</div><select class="vmodal-select" id="subAccount"></select></div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Next Date</div><input class="vmodal-input" id="subNextDate" type="date" style="color:var(--fg);font-size:14px;" /></div>
     </div>
     <div class="vmodal-foot">
       <button class="vmodal-save" onclick="saveSub()">Save</button>
@@ -1399,7 +550,6 @@
   </div>
 </div>
 
-<!-- Add Investment -->
 <div class="vmodal-overlay" id="modalInv">
   <div class="vmodal">
     <div class="vmodal-head">
@@ -1407,39 +557,12 @@
       <button class="vmodal-close" onclick="closeVModal('modalInv')">&#215;</button>
     </div>
     <div class="vmodal-body">
-      <div class="vmodal-cell full">
-        <div class="vmodal-label">Name</div>
-        <input class="vmodal-input" id="invName" type="text" placeholder="e.g. VWCE ETF" />
-      </div>
-      <div class="vmodal-cell">
-        <div class="vmodal-label">Type</div>
-        <select class="vmodal-select" id="invType">
-          <option value="ETF">ETF</option>
-          <option value="Stock">Stock</option>
-          <option value="Crypto">Crypto</option>
-          <option value="Bonds">Bonds</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <div class="vmodal-cell">
-        <div class="vmodal-label">Currency</div>
-        <select class="vmodal-select" id="invCurrency">
-          <option value="EUR">EUR</option>
-          <option value="IDR">IDR</option>
-        </select>
-      </div>
-      <div class="vmodal-cell">
-        <div class="vmodal-label">Total Invested</div>
-        <input class="vmodal-input large" id="invInvested" type="number" inputmode="decimal" placeholder="0" />
-      </div>
-      <div class="vmodal-cell">
-        <div class="vmodal-label">Current Value</div>
-        <input class="vmodal-input large" id="invValue" type="number" inputmode="decimal" placeholder="0" />
-      </div>
-      <div class="vmodal-cell full">
-        <div class="vmodal-label">Monthly Sparplan</div>
-        <input class="vmodal-input large" id="invMonthly" type="number" inputmode="decimal" placeholder="0 (optional)" />
-      </div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Name</div><input class="vmodal-input" id="invName" type="text" placeholder="e.g. VWCE ETF" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Type</div><select class="vmodal-select" id="invType"><option value="ETF">ETF</option><option value="Stock">Stock</option><option value="Crypto">Crypto</option><option value="Bonds">Bonds</option><option value="Other">Other</option></select></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Currency</div><select class="vmodal-select" id="invCurrency"><option value="EUR">EUR</option><option value="IDR">IDR</option></select></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Total Invested</div><input class="vmodal-input large" id="invInvested" type="text" inputmode="decimal" placeholder="0" oninput="fmtNumInput(this)" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Current Value</div><input class="vmodal-input large" id="invValue" type="text" inputmode="decimal" placeholder="0" oninput="fmtNumInput(this)" /></div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Monthly Sparplan</div><input class="vmodal-input large" id="invMonthly" type="text" inputmode="decimal" placeholder="0 (optional)" oninput="fmtNumInput(this)" /></div>
     </div>
     <div class="vmodal-foot">
       <button class="vmodal-save" onclick="saveInvestment()">Save</button>
@@ -1448,7 +571,6 @@
   </div>
 </div>
 
-<!-- Add/Edit Pocket -->
 <div class="vmodal-overlay" id="modalPocket">
   <div class="vmodal">
     <div class="vmodal-head">
@@ -1456,18 +578,9 @@
       <button class="vmodal-close" onclick="closeVModal('modalPocket')">&#215;</button>
     </div>
     <div class="vmodal-body">
-      <div class="vmodal-cell full">
-        <div class="vmodal-label">Name</div>
-        <input class="vmodal-input" id="pocketName" type="text" placeholder="e.g. Rent" />
-      </div>
-      <div class="vmodal-cell full">
-        <div class="vmodal-label">Balance</div>
-        <input class="vmodal-input large" id="pocketBalance" type="number" inputmode="decimal" placeholder="0.00" />
-      </div>
-      <div class="vmodal-cell full">
-        <div class="vmodal-label">Note</div>
-        <input class="vmodal-input" id="pocketNote" type="text" placeholder="Optional" />
-      </div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Name</div><input class="vmodal-input" id="pocketName" type="text" placeholder="e.g. Rent" /></div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Balance</div><input class="vmodal-input large" id="pocketBalance" type="text" inputmode="decimal" placeholder="0.00" oninput="fmtNumInput(this)" /></div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Note</div><input class="vmodal-input" id="pocketNote" type="text" placeholder="Optional" /></div>
     </div>
     <div class="vmodal-foot">
       <button class="vmodal-save" onclick="savePocket()">Save</button>
@@ -1476,14 +589,57 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     PENDING TX MODAL
-═══════════════════════════════════════════ -->
+<!-- ── EDIT TX MODAL ── -->
+<div class="vmodal-overlay" id="modalEditTx">
+  <div class="vmodal">
+    <div class="vmodal-head">
+      <div class="vmodal-title">Edit Transaction</div>
+      <button class="vmodal-close" onclick="closeEditModal()">&#215;</button>
+    </div>
+    <div class="vmodal-body">
+      <div class="vmodal-cell"><div class="vmodal-label">Currency</div><select class="vmodal-select" id="eCurrency" onchange="refreshEditAccounts()"><option value="EUR">EUR</option><option value="IDR">IDR</option></select></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Account</div><select class="vmodal-select" id="eAccount"></select></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Category</div><select class="vmodal-select" id="eCategory"></select></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Amount</div><input class="vmodal-input large" id="eAmount" type="text" inputmode="decimal" placeholder="0.00" oninput="fmtNumInput(this)" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Date</div><input class="vmodal-input" id="eDate" type="date" style="color:var(--fg);font-size:14px;" /></div>
+      <div class="vmodal-cell"><div class="vmodal-label">Note</div><input class="vmodal-input" id="eNote" type="text" placeholder="Optional" /></div>
+    </div>
+    <div class="vmodal-foot">
+      <button class="vmodal-save" onclick="saveEditTx()">Save</button>
+      <button class="vmodal-del visible" onclick="deleteEditTx()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── RECONCILE MODAL ── -->
+<div class="vmodal-overlay" id="modalReconcile">
+  <div class="vmodal">
+    <div class="vmodal-head">
+      <div class="vmodal-title">Reconcile</div>
+      <button class="vmodal-close" onclick="closeVModal('modalReconcile')">&#215;</button>
+    </div>
+    <div class="vmodal-body">
+      <div class="vmodal-cell full"><div class="vmodal-label">Account</div><div id="reconAccName" style="font-size:14px;font-weight:500;color:var(--muted);padding-top:2px;"></div></div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Current Balance</div><div id="reconCurrent" style="font-family:var(--mono);font-size:22px;font-weight:600;color:var(--muted);padding-top:2px;"></div></div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Actual Balance</div><input class="vmodal-input large" id="reconActual" type="text" inputmode="decimal" placeholder="0,00" oninput="fmtNumInput(this);updateReconDelta();" /></div>
+      <div class="vmodal-cell full"><div class="vmodal-label">Note</div><input class="vmodal-input" id="reconNote" type="text" placeholder="Reconciliation" /></div>
+    </div>
+    <div class="recon-row">
+      <div class="recon-label">Difference</div>
+      <div class="recon-delta zero" id="reconDelta">&#8212;</div>
+    </div>
+    <div class="vmodal-foot">
+      <button class="vmodal-save" onclick="confirmReconcile()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PENDING TX MODAL ── -->
 <div class="modal-overlay" id="txModal">
   <div class="modal">
     <div class="modal-title">Pending Transaction</div>
-    <div class="modal-cat"  id="modalCat"></div>
-    <div class="modal-note" id="modalNote"></div>
+    <div class="modal-cat"    id="modalCat"></div>
+    <div class="modal-note"   id="modalNote"></div>
     <div class="modal-amount" id="modalAmount"></div>
     <div class="modal-date"   id="modalDate"></div>
     <div class="modal-actions">
@@ -1494,165 +650,181 @@
   </div>
 </div>
 
-<!-- Reconcile Account -->
-<div class="vmodal-overlay" id="modalReconcile">
-  <div class="vmodal">
-    <div class="vmodal-head">
-      <div class="vmodal-title">Reconcile</div>
-      <button class="vmodal-close" onclick="closeVModal('modalReconcile')">&#215;</button>
-    </div>
-    <div class="vmodal-body">
-      <div class="vmodal-cell full"><div class="vmodal-label">Account</div><div id="reconcileAccName" style="font-family:var(--font-body);font-size:14px;font-weight:500;opacity:0.4;padding-top:2px;"></div></div>
-      <div class="vmodal-cell full"><div class="vmodal-label">Current Balance</div><div id="reconcileCurrentBal" style="font-family:var(--font-mono);font-size:22px;font-weight:600;opacity:0.4;padding-top:2px;"></div></div>
-      <div class="vmodal-cell full"><div class="vmodal-label">Actual Balance</div><input class="vmodal-input large" id="reconcileActual" type="number" inputmode="decimal" placeholder="0.00" oninput="updateReconcileDelta()" /></div>
-      <div class="vmodal-cell full"><div class="vmodal-label">Note</div><input class="vmodal-input" id="reconcileNote" type="text" placeholder="Reconciliation" /></div>
-      <div class="reconcile-delta"><div class="reconcile-delta-label">Difference</div><div class="reconcile-delta-val zero" id="reconcileDelta">&#8212;</div></div>
-    </div>
-    <div class="vmodal-foot"><button class="vmodal-save" onclick="saveReconcile()">Confirm</button></div>
-  </div>
-</div>
-
 <script>
-// ═══════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════
-var STORAGE_KEY = 'vault_v4';
-var currentTab  = 'track';
-var currentMode = 'out';
-var collapseOpen = false;
-var activeTxId   = null;
+// ── State ──
+var STORAGE_KEY    = 'vault_v4';
+var currentTab     = 'track';
+var currentMode    = 'out';
+var activeTxId     = null;
+var editTxId       = null;
+var reconAccountId = null;
+var vEditId        = null;
+var vEditType      = null;
+var pocketAccountId = null;
+var debtCardOpen   = false;
+var subsCardOpen   = false;
+var invsCardOpen   = false;
+var expandedAccounts = {};
 
+// ── Default data ──
 var DEFAULT_DATA = {
   eurAccounts: [
-    { id:'acc1', name:'N26',  balance:2400,    rate:0, note:'Main spending', currency:'EUR' },
-    { id:'acc2', name:'Wise', balance:580,     rate:0, note:'International', currency:'EUR' },
+    { id:'acc1', name:'N26',  balance:2400,    note:'Main spending', currency:'EUR' },
+    { id:'acc2', name:'Wise', balance:580,     note:'International', currency:'EUR' },
   ],
   idrAccounts: [
-    { id:'acc3', name:'BCA',  balance:4500000, rate:0, note:'', currency:'IDR' },
+    { id:'acc3', name:'BCA',  balance:4500000, note:'', currency:'IDR' },
   ],
   transactions: [
-    { id:'t1', type:'out',  currency:'EUR', amount:34.50,  category:'Groceries',     note:'Albert Heijn', date:'2025-03-25', accountId:'acc1', accountName:'N26',  pending:false },
-    { id:'t2', type:'in',   currency:'EUR', amount:1800,   category:'Salary',        note:'March',        date:'2025-03-25', accountId:'acc1', accountName:'N26',  pending:false },
-    { id:'t3', type:'out',  currency:'EUR', amount:9.99,   category:'Subscriptions', note:'Spotify',      date:'2025-03-27', accountId:'acc1', accountName:'N26',  pending:true  },
-    { id:'t4', type:'out',  currency:'EUR', amount:85,     category:'Dining',        note:'Restaurant',   date:'2025-03-20', accountId:'acc1', accountName:'N26',  pending:false },
-    { id:'t5', type:'out',  currency:'EUR', amount:2.80,   category:'Transport',     note:'Tram',         date:'2025-03-18', accountId:'acc1', accountName:'N26',  pending:false },
-    { id:'t6', type:'out',  currency:'EUR', amount:120,    category:'Health',        note:'Gym April',    date:'2025-03-29', accountId:'acc2', accountName:'Wise', pending:true  },
+    { id:'t1', type:'out', currency:'EUR', amount:34.50, category:'Groceries',     note:'Albert Heijn', date:'2025-03-25', accountId:'acc1', accountName:'N26',  pending:false },
+    { id:'t2', type:'in',  currency:'EUR', amount:1800,  category:'Salary',        note:'March',        date:'2025-03-25', accountId:'acc1', accountName:'N26',  pending:false },
+    { id:'t3', type:'out', currency:'EUR', amount:9.99,  category:'Subscriptions', note:'Spotify',      date:'2025-03-27', accountId:'acc1', accountName:'N26',  pending:true  },
+    { id:'t4', type:'out', currency:'EUR', amount:85,    category:'Dining',        note:'Restaurant',   date:'2025-03-20', accountId:'acc1', accountName:'N26',  pending:false },
+    { id:'t5', type:'out', currency:'EUR', amount:2.80,  category:'Transport',     note:'Tram',         date:'2025-03-18', accountId:'acc1', accountName:'N26',  pending:false },
+    { id:'t6', type:'out', currency:'EUR', amount:120,   category:'Health',        note:'Gym April',    date:'2025-03-29', accountId:'acc2', accountName:'Wise', pending:true  },
   ],
   debts: [
     { id:'d1', name:'Student Loan', total:12000, remaining:4800, monthly:250, totalMonths:48, months:19, currency:'EUR' },
   ],
   subscriptions: [
-    { id:'s1', name:'Spotify', amount:9.99,  currency:'EUR', renewal:'monthly', accountName:'N26',  nextDate:'2025-04-01' },
-    { id:'s2', name:'iCloud',  amount:2.99,  currency:'EUR', renewal:'monthly', accountName:'N26',  nextDate:'2025-04-05' },
-    { id:'s3', name:'NordVPN', amount:59.88, currency:'EUR', renewal:'yearly',  accountName:'Wise', nextDate:'2025-11-12' },
+    { id:'s1', name:'Spotify', amount:9.99,  currency:'EUR', renewal:'monthly', accountName:'N26',  nextDate:'2026-04-15' },
+    { id:'s2', name:'iCloud',  amount:2.99,  currency:'EUR', renewal:'monthly', accountName:'N26',  nextDate:'2026-04-20' },
+    { id:'s3', name:'NordVPN', amount:59.88, currency:'EUR', renewal:'yearly',  accountName:'Wise', nextDate:'2026-11-12' },
   ],
-  goals: [],
   pockets: [
-    { id:'p1', accountId:'acc1', name:'Rent',      balance:800,  note:'' },
-    { id:'p2', accountId:'acc1', name:'Emergency',  balance:500,  note:'3 months' },
+    { id:'p1', accountId:'acc1', name:'Rent',      balance:800, note:'' },
+    { id:'p2', accountId:'acc1', name:'Emergency',  balance:500, note:'3 months' },
   ],
   investments: [
-    { id:'i1', name:'VWCE ETF', type:'ETF',    totalInvested:3200, currentValue:3890, currency:'EUR', monthlyAmount:100 },
-    { id:'i2', name:'BTC',      type:'Crypto',  totalInvested:500,  currentValue:420,  currency:'EUR', monthlyAmount:0   },
+    { id:'i1', name:'VWCE ETF', type:'ETF',   totalInvested:3200, currentValue:3890, currency:'EUR', monthlyAmount:100 },
+    { id:'i2', name:'BTC',      type:'Crypto', totalInvested:500,  currentValue:420,  currency:'EUR', monthlyAmount:0   },
   ],
   categories: [
-    { name:'Housing',          type:'expense' },
-    { name:'Utilities',        type:'expense' },
-    { name:'Groceries',        type:'expense' },
-    { name:'Dining',           type:'expense' },
-    { name:'Transport',        type:'expense' },
-    { name:'Health',           type:'expense' },
-    { name:'Shopping',         type:'expense' },
-    { name:'Entertainment',    type:'expense' },
-    { name:'Subscriptions',    type:'expense' },
-    { name:'Personal Care',    type:'expense' },
-    { name:'Education',        type:'expense' },
-    { name:'Other',            type:'expense' },
-    { name:'Salary',           type:'income'  },
-    { name:'Freelance',        type:'income'  },
-    { name:'Business',         type:'income'  },
-    { name:'Gift',             type:'income'  },
-    { name:'Refund',           type:'income'  },
-    { name:'Investment Return',type:'income'  },
-    { name:'Other Income',     type:'income'  },
+    { name:'Housing',           type:'expense' },
+    { name:'Utilities',         type:'expense' },
+    { name:'Groceries',         type:'expense' },
+    { name:'Dining',            type:'expense' },
+    { name:'Transport',         type:'expense' },
+    { name:'Health',            type:'expense' },
+    { name:'Shopping',          type:'expense' },
+    { name:'Entertainment',     type:'expense' },
+    { name:'Subscriptions',     type:'expense' },
+    { name:'Personal Care',     type:'expense' },
+    { name:'Education',         type:'expense' },
+    { name:'Other',             type:'expense' },
+    { name:'Salary',            type:'income'  },
+    { name:'Freelance',         type:'income'  },
+    { name:'Business',          type:'income'  },
+    { name:'Gift',              type:'income'  },
+    { name:'Refund',            type:'income'  },
+    { name:'Investment Return', type:'income'  },
+    { name:'Other Income',      type:'income'  },
   ],
 };
 
 var data = (function() {
-  try {
-    var raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch(e) {}
+  try { var r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); } catch(e) {}
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 })();
 
-function save() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
-}
+// ── Persistence ──
+function save()  { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {} }
+function uid()   { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function today() { return new Date().toISOString().slice(0,10); }
 
-function uid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+// ── Number formatting ──
+function fmtNumInput(el) {
+  var raw       = el.value.replace(/\./g, '');
+  var parts     = raw.split(',');
+  var integer   = parts[0].replace(/\D/g, '');
+  var decimal   = parts.length > 1 ? ',' + parts[1].replace(/\D/g, '').slice(0,2) : '';
+  var formatted = integer ? parseInt(integer, 10).toLocaleString('en').replace(/,/g, '.') : '';
+  var cursor    = el.selectionStart;
+  var prevLen   = el.value.length;
+  el.value      = formatted + decimal;
+  var diff      = el.value.length - prevLen;
+  el.setSelectionRange(cursor + diff, cursor + diff);
 }
-
-function today() {
-  return new Date().toISOString().slice(0, 10);
+function fmtForInput(n) {
+  if (!n && n !== 0) return '';
+  var parts = Number(n).toFixed(2).split('.');
+  return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + parts[1];
 }
-
-// ═══════════════════════════════════════════
-// FORMATTERS
-// ═══════════════════════════════════════════
-function fmtEur(n) {
-  return '\u20AC' + Number(n).toLocaleString('en', { minimumFractionDigits:0, maximumFractionDigits:0 });
+function parseNum(id) {
+  return parseFloat((document.getElementById(id).value || '').replace(/\./g, '').replace(',', '.')) || 0;
 }
-function fmtEurDec(n) {
-  return '\u20AC' + Number(n).toLocaleString('en', { minimumFractionDigits:2, maximumFractionDigits:2 });
+function fmtNum(n, dec) {
+  var parts = Number(n).toFixed(dec).split('.');
+  return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (dec > 0 ? ',' + parts[1] : '');
 }
-function fmtIdr(n) {
-  return 'Rp' + Math.round(n / 1000).toLocaleString('en') + 'K';
-}
-function fmtAmt(amount, currency) {
-  return currency === 'IDR' ? fmtIdr(amount) : fmtEurDec(amount);
-}
+function fmtEur(n)    { return '\u20AC' + fmtNum(n, 0); }
+function fmtEurDec(n) { return '\u20AC' + fmtNum(n, 2); }
+function fmtIdr(n)    { return 'Rp' + fmtNum(Math.round(n / 1000), 0) + 'K'; }
+function fmtAmt(amount, currency) { return currency === 'IDR' ? fmtIdr(amount) : fmtEurDec(amount); }
 function fmtDate(s) {
   if (!s) return '\u2014';
-  var d = new Date(s + 'T00:00:00');
-  return d.toLocaleDateString('en', { month:'short', day:'numeric' });
+  return new Date(s + 'T00:00:00').toLocaleDateString('en', { month:'short', day:'numeric' });
 }
 function fmtDateLong(s) {
   if (!s) return '\u2014';
-  var d = new Date(s + 'T00:00:00');
-  return d.toLocaleDateString('en', { weekday:'short', month:'short', day:'numeric' });
+  return new Date(s + 'T00:00:00').toLocaleDateString('en', { weekday:'short', month:'short', day:'numeric' });
+}
+function allAccounts() { return (data.eurAccounts || []).concat(data.idrAccounts || []); }
+
+// ── Subscriptions ──
+function getSubsDue() {
+  var now    = new Date(); now.setHours(0,0,0,0);
+  var cutoff = new Date(now.getFullYear(), now.getMonth() + 1, 0); cutoff.setHours(23,59,59,999);
+  return (data.subscriptions || []).filter(function(s) {
+    if (!s.nextDate) return false;
+    var d = new Date(s.nextDate + 'T00:00:00');
+    return d >= now && d <= cutoff;
+  }).map(function(s) {
+    var acc = allAccounts().find(function(a) { return a.name === s.accountName; });
+    return { id:'sub__'+s.id, subId:s.id, type:'out', currency:s.currency, amount:s.amount,
+             category:'Subscriptions', note:s.name, date:s.nextDate,
+             accountId:acc ? acc.id : null, accountName:s.accountName || '', pending:true };
+  });
+}
+function advanceSubDate(sub) {
+  if (!sub.nextDate) return;
+  var d = new Date(sub.nextDate + 'T00:00:00');
+  if (sub.renewal === 'yearly')      d.setFullYear(d.getFullYear() + 1);
+  else if (sub.renewal === 'weekly') d.setDate(d.getDate() + 7);
+  else                               d.setMonth(d.getMonth() + 1);
+  sub.nextDate = d.toISOString().slice(0, 10);
 }
 
-function allAccounts() {
-  return (data.eurAccounts || []).concat(data.idrAccounts || []);
+// ── Balance mutations ──
+function applyTxToBalance(tx, mult) {
+  var acc = allAccounts().find(function(a) { return a.id === tx.accountId; });
+  if (!acc) return;
+  if (tx.type === 'in')   acc.balance += tx.amount * mult;
+  if (tx.type === 'out')  acc.balance -= tx.amount * mult;
+  if (tx.type === 'move') {
+    if (tx.note && tx.note.indexOf('To ') === 0) acc.balance -= tx.amount * mult;
+    else                                         acc.balance += tx.amount * mult;
+  }
 }
 
-// ═══════════════════════════════════════════
-// TAB SWITCHING
-// ═══════════════════════════════════════════
+// ── Tab switching ──
 function setTab(name) {
   currentTab = name;
   document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
   document.getElementById('tab-' + name).classList.add('active');
-
   document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
   document.getElementById('nav' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
-
-  var nav  = document.getElementById('bottomNav');
-  var w    = nav.offsetWidth / 3;
-  var idx  = name === 'track' ? 0 : name === 'home' ? 1 : 2;
+  var nav = document.getElementById('bottomNav');
+  var w   = nav.offsetWidth / 3;
+  var idx = name === 'track' ? 0 : name === 'home' ? 1 : 2;
   document.getElementById('navBar').style.left  = (w * idx) + 'px';
   document.getElementById('navBar').style.width = w + 'px';
-
   if (name === 'track') renderTrack();
   if (name === 'home')  renderHome();
   if (name === 'vault') renderVault();
 }
 
-// ═══════════════════════════════════════════
-// TRACK TAB
-// ═══════════════════════════════════════════
+// ── Track tab ──
 function setMode(m) {
   currentMode = m;
   ['out','in','move'].forEach(function(k) {
@@ -1662,17 +834,10 @@ function setMode(m) {
   refreshPockets();
 }
 
-function toggleCollapse() {
-  collapseOpen = !collapseOpen;
-  document.getElementById('collapseBody').classList.toggle('open', collapseOpen);
-  document.getElementById('collapseIcon').classList.toggle('open', collapseOpen);
-}
-
 function refreshForm() {
-  var cur = document.getElementById('fCurrency').value;
+  var cur  = document.getElementById('fCurrency').value;
   var accs = cur === 'IDR' ? (data.idrAccounts || []) : (data.eurAccounts || []);
-  var accEl = document.getElementById('fAccount');
-  accEl.innerHTML = accs.map(function(a) {
+  document.getElementById('fAccount').innerHTML = accs.map(function(a) {
     return '<option value="' + a.id + '">' + a.name + '</option>';
   }).join('');
   refreshPockets();
@@ -1681,397 +846,212 @@ function refreshForm() {
 
 function refreshPockets() {
   var accountId = document.getElementById('fAccount').value;
-  var pockets = (data.pockets || []).filter(function(p) { return p.accountId === accountId; });
-  var pocketEl = document.getElementById('fPocket');
-  pocketEl.innerHTML = '<option value="">None</option>' + pockets.map(function(p) {
+  var pockets   = (data.pockets || []).filter(function(p) { return p.accountId === accountId; });
+  document.getElementById('fPocket').innerHTML = '<option value="">None</option>' + pockets.map(function(p) {
     return '<option value="' + p.id + '">' + p.name + '</option>';
   }).join('');
-
-  // Update label based on mode
-  document.getElementById('fPocketLabel').textContent = currentMode === 'move' ? 'From Pocket' : 'Pocket';
-
-  // Show/hide to-account for move mode
-  var toCell = document.getElementById('fToAccountCell');
-  toCell.style.display = currentMode === 'move' ? '' : 'none';
-  if (currentMode === 'move') refreshToAccount();
-
-  // Hide category for move
-  var catCell = document.getElementById('fCategoryCell');
-  catCell.style.display = currentMode === 'move' ? 'none' : '';
-
-  // Update account label
-  document.getElementById('fAccountLabel').textContent = currentMode === 'move' ? 'From Account' : 'Account';
+  var isMove = currentMode === 'move';
+  document.getElementById('fPocketLabel').textContent          = isMove ? 'From Pocket' : 'Pocket';
+  document.getElementById('fAccountLabel').textContent         = isMove ? 'From Account' : 'Account';
+  document.getElementById('fToAccountCell').style.display      = isMove ? '' : 'none';
+  document.getElementById('fCategoryCell').style.display       = isMove ? 'none' : '';
+  if (isMove) refreshToAccount();
 }
 
 function refreshToAccount() {
-  var cur = document.getElementById('fCurrency').value;
+  var cur    = document.getElementById('fCurrency').value;
   var fromId = document.getElementById('fAccount').value;
-  var accs = (cur === 'IDR' ? (data.idrAccounts||[]) : (data.eurAccounts||[]))
-    .filter(function(a) { return a.id !== fromId; });
-  var el = document.getElementById('fToAccount');
-  el.innerHTML = accs.map(function(a) {
-    return '<option value="' + a.id + '">' + a.name + '</option>';
-  }).join('');
-  if (!accs.length) el.innerHTML = '<option value="">No other accounts</option>';
+  var accs   = (cur === 'IDR' ? (data.idrAccounts || []) : (data.eurAccounts || [])).filter(function(a) { return a.id !== fromId; });
+  var el     = document.getElementById('fToAccount');
+  el.innerHTML = accs.length
+    ? accs.map(function(a) { return '<option value="' + a.id + '">' + a.name + '</option>'; }).join('')
+    : '<option value="">No other accounts</option>';
 }
 
 function refreshCategories() {
   var type = currentMode === 'in' ? 'income' : 'expense';
-  var cats = (data.categories || []).filter(function(c) { return c.type === type; });
-  var el = document.getElementById('fCategory');
-  el.innerHTML = cats.map(function(c) {
+  document.getElementById('fCategory').innerHTML = (data.categories || []).filter(function(c) { return c.type === type; }).map(function(c) {
     return '<option value="' + c.name + '">' + c.name + '</option>';
   }).join('');
 }
 
 function addTransaction() {
-  var amount = parseFloat(document.getElementById('fAmount').value);
-  if (!amount || isNaN(amount)) {
-    document.getElementById('fAmount').focus();
-    return;
-  }
-  var currency    = document.getElementById('fCurrency').value;
-  var accountId   = document.getElementById('fAccount').value;
-  var accs        = allAccounts();
-  var acc         = accs.find(function(a) { return a.id === accountId; });
-  var date        = document.getElementById('fDate').value || today();
-  var pending     = document.getElementById('fPending').value === 'true';
-  var note        = document.getElementById('fNote').value.trim();
-  var category    = currentMode === 'move' ? 'Transfer' : document.getElementById('fCategory').value;
-  var pocketId    = document.getElementById('fPocket').value || null;
-  var pocket      = pocketId ? (data.pockets||[]).find(function(p) { return p.id === pocketId; }) : null;
+  var amount = parseNum('fAmount');
+  if (!amount) { document.getElementById('fAmount').focus(); return; }
+  var currency  = document.getElementById('fCurrency').value;
+  var accountId = document.getElementById('fAccount').value;
+  var accs      = allAccounts();
+  var acc       = accs.find(function(a) { return a.id === accountId; });
+  var date      = document.getElementById('fDate').value || today();
+  var note      = document.getElementById('fNote').value.trim();
+  var pocketId  = document.getElementById('fPocket').value || null;
+  var pocket    = pocketId ? (data.pockets || []).find(function(p) { return p.id === pocketId; }) : null;
 
   if (currentMode === 'move') {
     var toAccountId = document.getElementById('fToAccount').value;
     var toAcc = accs.find(function(a) { return a.id === toAccountId; });
     if (!toAccountId || !toAcc) { document.getElementById('fToAccount').focus(); return; }
-
-    // Create two transactions — out from source, in to destination
-    var txOut = {
-      id: uid(), type: 'move', currency: currency, amount: amount,
-      category: 'Transfer', note: note || ('To ' + toAcc.name),
-      date: date, accountId: accountId, accountName: acc ? acc.name : '',
-      pending: pending, pocketId: pocketId || null,
-    };
-    var txIn = {
-      id: uid(), type: 'move', currency: currency, amount: amount,
-      category: 'Transfer', note: note || ('From ' + (acc ? acc.name : '')),
-      date: date, accountId: toAccountId, accountName: toAcc.name,
-      pending: pending, pocketId: null,
-    };
-    data.transactions.push(txOut);
-    data.transactions.push(txIn);
+    data.transactions.push({ id:uid(), type:'move', currency:currency, amount:amount, category:'Transfer', note:note || ('To ' + toAcc.name),   date:date, accountId:accountId,   accountName:acc ? acc.name : '',  pending:false, pocketId:pocketId||null, addedAt:Date.now() });
+    data.transactions.push({ id:uid(), type:'move', currency:currency, amount:amount, category:'Transfer', note:note || ('From ' + (acc ? acc.name : '')), date:date, accountId:toAccountId, accountName:toAcc.name, pending:false, pocketId:null,           addedAt:Date.now() });
+    if (acc)   acc.balance   -= amount;
+    if (toAcc) toAcc.balance += amount;
   } else {
-    var tx = {
-      id: uid(),
-      type: currentMode,
-      currency: currency,
-      amount: amount,
-      category: category,
-      note: note,
-      date: date,
-      accountId: accountId,
-      accountName: acc ? acc.name : '',
-      pending: pending,
-      pocketId: pocketId || null,
-      pocketName: pocket ? pocket.name : null,
-    };
-    data.transactions.push(tx);
+    data.transactions.push({ id:uid(), type:currentMode, currency:currency, amount:amount, category:document.getElementById('fCategory').value, note:note, date:date, accountId:accountId, accountName:acc ? acc.name : '', pending:false, pocketId:pocketId||null, pocketName:pocket ? pocket.name : null, addedAt:Date.now() });
+    if (acc) {
+      if (currentMode === 'in')  acc.balance += amount;
+      if (currentMode === 'out') acc.balance -= amount;
+    }
   }
-
   save();
   document.getElementById('fAmount').value = '';
   document.getElementById('fNote').value   = '';
   renderTrack();
 }
 
-function renderTrack() {
+function txRowHTML(tx) {
+  var sign  = tx.type === 'in' ? '+' : tx.type === 'move' ? '\u2194' : '\u2212';
+  var cls   = tx.type === 'in' ? 'in' : tx.type === 'move' ? 'move' : 'out';
+  var sub   = [tx.note, tx.pocketName].filter(Boolean).join(' \u00B7 ');
+  var click = tx.pending ? ' onclick="openModal(this.dataset.id)"' : ' onclick="openEditModal(this.dataset.id)"';
+  return '<div class="tx-row" data-id="' + tx.id + '"' + click + '>' +
+    '<div class="tx-dot ' + (tx.pending ? 'pending' : tx.type) + '"></div>' +
+    '<div class="tx-main"><div class="tx-cat">' + tx.category + '</div>' + (sub ? '<div class="tx-note">' + sub + '</div>' : '') + '</div>' +
+    '<div class="tx-right"><div class="tx-amount ' + cls + '">' + sign + fmtAmt(tx.amount, tx.currency) + '</div><div class="tx-date">' + fmtDate(tx.date) + ' \u00B7 ' + tx.accountName + '</div></div>' +
+    '</div>';
+}
 
+function renderTrack() {
   refreshForm();
   refreshCategories();
   document.getElementById('fDate').value = today();
 
-  // Upcoming
-  var upcoming = (data.transactions || []).filter(function(t) { return t.pending; });
-  document.getElementById('upcomingMeta').textContent = upcoming.length + ' pending';
-  if (upcoming.length) {
-    document.getElementById('upcomingList').innerHTML = upcoming.map(function(tx) {
-      var sign = tx.type === 'in' ? '+' : tx.type === 'move' ? '\u2194' : '\u2212';
-      var cls  = tx.type === 'in' ? 'in' : tx.type === 'move' ? 'move' : 'out';
-      var sub = [tx.note, tx.pocketName].filter(Boolean).join(' \u00B7 ');
-      return '<div class="tx-row" onclick="openModal(\'' + tx.id + '\')">' +
-        '<div class="tx-dot pending"></div>' +
-        '<div class="tx-main">' +
-          '<div class="tx-cat">' + tx.category + '</div>' +
-          (sub ? '<div class="tx-note">' + sub + '</div>' : '') +
-        '</div>' +
-        '<div class="tx-right">' +
-          '<div class="tx-amount ' + cls + '">' + sign + fmtAmt(tx.amount, tx.currency) + '</div>' +
-          '<div class="tx-date">' + fmtDate(tx.date) + ' \u00B7 ' + tx.accountName + '</div>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-  } else {
-    document.getElementById('upcomingList').innerHTML =
-      '<div class="empty">No pending transactions</div>';
-  }
+  var pending  = (data.transactions || []).filter(function(t) { return t.pending; });
+  var upcoming = pending.concat(getSubsDue()).sort(function(a,b) { return a.date.localeCompare(b.date); });
+  document.getElementById('upcomingMeta').textContent  = upcoming.length + ' pending';
+  document.getElementById('upcomingList').innerHTML    = upcoming.length ? upcoming.map(txRowHTML).join('') : '<div class="empty">No pending transactions</div>';
 
-  // Recent
-  var recent = (data.transactions || [])
-    .filter(function(t) { return !t.pending; })
-    .sort(function(a, b) { return b.date.localeCompare(a.date); })
-    .slice(0, 10);
+  var recent = (data.transactions || []).filter(function(t) { return !t.pending; })
+    .sort(function(a,b) { return (b.addedAt || 0) - (a.addedAt || 0); }).slice(0, 10);
   document.getElementById('recentMeta').textContent = recent.length + ' transactions';
-  if (recent.length) {
-    document.getElementById('recentList').innerHTML = recent.map(function(tx) {
-      var sign = tx.type === 'in' ? '+' : tx.type === 'move' ? '\u2194' : '\u2212';
-      var cls  = tx.type === 'in' ? 'in' : tx.type === 'move' ? 'move' : 'out';
-      var sub  = [tx.note, tx.pocketName].filter(Boolean).join(' \u00B7 ');
-      return '<div class="tx-row">' +
-        '<div class="tx-dot ' + tx.type + '"></div>' +
-        '<div class="tx-main">' +
-          '<div class="tx-cat">' + tx.category + '</div>' +
-          (sub ? '<div class="tx-note">' + sub + '</div>' : '') +
-        '</div>' +
-        '<div class="tx-right">' +
-          '<div class="tx-amount ' + cls + '">' + sign + fmtAmt(tx.amount, tx.currency) + '</div>' +
-          '<div class="tx-date">' + fmtDate(tx.date) + ' \u00B7 ' + tx.accountName + '</div>' +
-        '</div>' +
-        '<button class="tx-del" onclick="deleteTx(\'' + tx.id + '\',event)">\u00D7</button>' +
-      '</div>';
-    }).join('');
-  } else {
-    document.getElementById('recentList').innerHTML =
-      '<div class="empty">No transactions yet</div>';
-  }
+  document.getElementById('recentList').innerHTML   = recent.length ? recent.map(txRowHTML).join('') : '<div class="empty">No transactions yet</div>';
 }
 
-function deleteTx(id, evt) {
-  evt.stopPropagation();
-  data.transactions = data.transactions.filter(function(t) { return t.id !== id; });
-  save();
-  renderTrack();
-}
-
-// ═══════════════════════════════════════════
-// MODAL
-// ═══════════════════════════════════════════
+// ── Pending TX modal ──
 function openModal(id) {
   activeTxId = id;
-  var tx = (data.transactions || []).find(function(t) { return t.id === id; });
+  var tx = id.indexOf('sub__') === 0
+    ? getSubsDue().find(function(t) { return t.id === id; })
+    : (data.transactions || []).find(function(t) { return t.id === id; });
   if (!tx) return;
-  var sign = tx.type === 'in' ? '+' : '\u2212';
   document.getElementById('modalCat').textContent    = tx.category;
   document.getElementById('modalNote').textContent   = tx.note || '';
-  document.getElementById('modalAmount').textContent = sign + fmtAmt(tx.amount, tx.currency);
+  document.getElementById('modalAmount').textContent = '\u2212' + fmtAmt(tx.amount, tx.currency);
   document.getElementById('modalDate').textContent   = fmtDateLong(tx.date) + ' \u00B7 ' + tx.accountName;
   document.getElementById('txModal').classList.add('open');
 }
-
-function closeModal() {
-  document.getElementById('txModal').classList.remove('open');
-  activeTxId = null;
-}
+function closeModal() { document.getElementById('txModal').classList.remove('open'); activeTxId = null; }
 
 function settleTx() {
-  var tx = (data.transactions || []).find(function(t) { return t.id === activeTxId; });
-  if (tx) { tx.pending = false; save(); }
-  closeModal();
-  renderTrack();
+  if (activeTxId.indexOf('sub__') === 0) {
+    var subId = activeTxId.replace('sub__', '');
+    var sub   = (data.subscriptions || []).find(function(s) { return s.id === subId; });
+    if (sub) {
+      var acc = allAccounts().find(function(a) { return a.name === sub.accountName; });
+      if (acc) acc.balance -= sub.amount;
+      data.transactions.push({ id:uid(), type:'out', currency:sub.currency, amount:sub.amount, category:'Subscriptions', note:sub.name, date:sub.nextDate, accountId:acc ? acc.id : null, accountName:sub.accountName || '', pending:false, addedAt:Date.now() });
+      advanceSubDate(sub);
+      save();
+    }
+  } else {
+    var tx = (data.transactions || []).find(function(t) { return t.id === activeTxId; });
+    if (tx) { tx.pending = false; applyTxToBalance(tx, 1); save(); }
+  }
+  closeModal(); renderTrack();
 }
 
 function deletePendingTx() {
-  data.transactions = data.transactions.filter(function(t) { return t.id !== activeTxId; });
-  save();
-  closeModal();
-  renderTrack();
+  if (activeTxId.indexOf('sub__') === 0) {
+    var subId = activeTxId.replace('sub__', '');
+    var sub   = (data.subscriptions || []).find(function(s) { return s.id === subId; });
+    if (sub) { advanceSubDate(sub); save(); }
+  } else {
+    data.transactions = data.transactions.filter(function(t) { return t.id !== activeTxId; });
+    save();
+  }
+  closeModal(); renderTrack();
 }
 
-// Close modal on overlay click
-document.getElementById('txModal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
+document.getElementById('txModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
 
-// ═══════════════════════════════════════════
-// HOME TAB
-// ═══════════════════════════════════════════
+// ── Home tab ──
 function renderHome() {
-  var now = new Date();
+  var now     = new Date();
+  var eurSum  = (data.eurAccounts || []).reduce(function(s,a) { return s + (a.balance || 0); }, 0);
+  var idrSum  = (data.idrAccounts || []).reduce(function(s,a) { return s + (a.balance || 0); }, 0);
+  var debtSum = (data.debts || []).reduce(function(s,d) { return s + (d.remaining || 0); }, 0);
+  var invVal  = (data.investments || []).reduce(function(s,i) { return s + (i.currentValue || 0); }, 0);
 
-  var eurSum  = (data.eurAccounts || []).reduce(function(s,a) { return s + (a.balance||0); }, 0);
-  var idrSum  = (data.idrAccounts || []).reduce(function(s,a) { return s + (a.balance||0); }, 0);
-  var debtSum = (data.debts || []).reduce(function(s,d) { return s + (d.remaining||0); }, 0);
-  var invVal  = (data.investments || []).reduce(function(s,i) { return s + (i.currentValue||0); }, 0);
-  var net = eurSum - debtSum + invVal;
+  document.getElementById('homeNet').innerHTML         = '<sup>\u20AC</sup>' + fmtNum(Math.round(eurSum - debtSum + invVal), 0);
+  document.getElementById('homeEur').textContent       = fmtEur(eurSum);
+  document.getElementById('homeEurSub').textContent    = (data.eurAccounts || []).length + ' accounts';
+  document.getElementById('homeIdr').textContent       = fmtIdr(idrSum);
+  document.getElementById('homeIdrSub').textContent    = (data.idrAccounts || []).length + ' accounts';
+  document.getElementById('homeDebts').textContent     = debtSum > 0 ? fmtEur(debtSum) : '\u2014';
+  document.getElementById('homeDebtsSub').textContent  = (data.debts || []).length + ' active';
 
-  document.getElementById('homeNet').innerHTML = '<sup>\u20AC</sup>' + Math.round(net).toLocaleString('en');
-  document.getElementById('homeEur').textContent    = fmtEur(eurSum);
-  document.getElementById('homeEurSub').textContent = (data.eurAccounts||[]).length + ' accounts';
-  document.getElementById('homeIdr').textContent    = fmtIdr(idrSum);
-  document.getElementById('homeIdrSub').textContent = (data.idrAccounts||[]).length + ' accounts';
-  document.getElementById('homeDebts').textContent  = debtSum > 0 ? fmtEur(debtSum) : '\u2014';
-  document.getElementById('homeDebtsSub').textContent = (data.debts||[]).length + ' active';
-
-  // Spending this month
-  var month = now.getMonth();
-  var year  = now.getFullYear();
-  var monthTxs = (data.transactions||[]).filter(function(t) {
+  var month    = now.getMonth();
+  var year     = now.getFullYear();
+  var monthTxs = (data.transactions || []).filter(function(t) {
     if (t.type !== 'out' || t.currency !== 'EUR' || t.pending) return false;
     var d = new Date(t.date + 'T00:00:00');
     return d.getMonth() === month && d.getFullYear() === year;
   });
   var monthTotal = monthTxs.reduce(function(s,t) { return s + t.amount; }, 0);
+  document.getElementById('homeSpendMeta').textContent = now.toLocaleDateString('en', { month:'long' });
+  document.getElementById('homeSpendTotal').innerHTML  = fmtEurDec(monthTotal) + '<span>this month</span>';
 
-  document.getElementById('homeSpendMeta').textContent =
-    now.toLocaleDateString('en', { month:'long' });
-  document.getElementById('homeSpendTotal').innerHTML =
-    fmtEurDec(monthTotal) + '<span>this month</span>';
-
-  var cats = {};
-  monthTxs.forEach(function(t) { cats[t.category] = (cats[t.category]||0) + t.amount; });
-  var sorted = Object.keys(cats).map(function(k) { return { name:k, amount:cats[k] }; })
-    .sort(function(a,b) { return b.amount - a.amount; });
-  var max = sorted.length ? sorted[0].amount : 1;
-
+  var cats   = {};
+  monthTxs.forEach(function(t) { cats[t.category] = (cats[t.category] || 0) + t.amount; });
+  var sorted = Object.keys(cats).map(function(k) { return { name:k, amount:cats[k] }; }).sort(function(a,b) { return b.amount - a.amount; });
+  var maxCat = sorted.length ? sorted[0].amount : 1;
   document.getElementById('homeCatList').innerHTML = sorted.length ? sorted.map(function(c) {
-    var pct = Math.round((c.amount / max) * 100);
-    return '<div class="cat-row">' +
-      '<div class="cat-row-header">' +
-        '<div class="cat-name">' + c.name + '</div>' +
-        '<div class="cat-amount">' + fmtEurDec(c.amount) + '</div>' +
-      '</div>' +
-      '<div class="cat-bar-bg"><div class="cat-bar-fill" style="width:' + pct + '%"></div></div>' +
-    '</div>';
+    return '<div class="cat-row"><div class="cat-row-header"><div class="cat-name">' + c.name + '</div><div class="cat-amount">' + fmtEurDec(c.amount) + '</div></div><div class="cat-bar-bg"><div class="cat-bar-fill" style="width:' + Math.round((c.amount / maxCat) * 100) + '%"></div></div></div>';
   }).join('') : '<div class="empty">No spending this month</div>';
 
-  // Monthly chart — derive from transactions
   var months = [];
   for (var i = 5; i >= 0; i--) {
-    var d = new Date(year, month - i, 1);
-    var m = d.getMonth();
-    var y = d.getFullYear();
-    var total = (data.transactions||[]).filter(function(t) {
+    var d   = new Date(year, month - i, 1);
+    var m   = d.getMonth();
+    var y   = d.getFullYear();
+    var tot = (data.transactions || []).filter(function(t) {
       if (t.type !== 'out' || t.currency !== 'EUR' || t.pending) return false;
       var td = new Date(t.date + 'T00:00:00');
       return td.getMonth() === m && td.getFullYear() === y;
     }).reduce(function(s,t) { return s + t.amount; }, 0);
-    months.push({
-      label: d.toLocaleDateString('en', { month:'short' }),
-      amount: total,
-      isCurrent: i === 0,
-    });
+    months.push({ label:d.toLocaleDateString('en', { month:'short' }), amount:tot, isCurrent:i === 0 });
   }
-  var maxM = Math.max.apply(null, months.map(function(m) { return m.amount; })) || 1;
-  document.getElementById('homeMonthly').innerHTML = months.map(function(m) {
-    var pct = Math.max(Math.round((m.amount / maxM) * 100), 3);
-    return '<div class="month-col">' +
-      '<div class="month-bar-wrap">' +
-        '<div class="month-bar' + (m.isCurrent ? ' current' : '') + '" style="height:' + pct + '%"></div>' +
-      '</div>' +
-      '<div class="month-label">' + m.label + '</div>' +
-    '</div>';
+  var maxM = Math.max.apply(null, months.map(function(x) { return x.amount; })) || 1;
+  document.getElementById('homeMonthly').innerHTML = months.map(function(x) {
+    return '<div class="month-col"><div class="month-bar-wrap"><div class="month-bar' + (x.isCurrent ? ' current' : '') + '" style="height:' + Math.max(Math.round((x.amount / maxM) * 100), 3) + '%"></div></div><div class="month-label">' + x.label + '</div></div>';
   }).join('');
 
-  // This week
-  var weekEnd = new Date(now);
-  weekEnd.setDate(weekEnd.getDate() + 7);
-  var week = (data.transactions||[]).filter(function(t) {
+  var weekEnd = new Date(now); weekEnd.setDate(weekEnd.getDate() + 7);
+  var week = (data.transactions || []).filter(function(t) {
     if (!t.pending) return false;
     var d = new Date(t.date + 'T00:00:00');
     return d >= now && d <= weekEnd;
-  }).sort(function(a,b) { return a.date.localeCompare(b.date); });
-
+  }).concat(getSubsDue()).sort(function(a,b) { return a.date.localeCompare(b.date); });
   document.getElementById('homeWeekMeta').textContent = week.length + ' upcoming';
-  document.getElementById('homeWeekList').innerHTML = week.length ? week.map(function(tx) {
-    var sign = tx.type === 'in' ? '+' : '\u2212';
-    var cls  = tx.type === 'in' ? 'in' : 'out';
-    return '<div class="tx-row" onclick="openModal(\'' + tx.id + '\')">' +
-      '<div class="tx-dot pending"></div>' +
-      '<div class="tx-main">' +
-        '<div class="tx-cat">' + tx.category + '</div>' +
-        (tx.note ? '<div class="tx-note">' + tx.note + '</div>' : '') +
-      '</div>' +
-      '<div class="tx-right">' +
-        '<div class="tx-amount ' + cls + '">' + sign + fmtAmt(tx.amount, tx.currency) + '</div>' +
-        '<div class="tx-date">' + fmtDateLong(tx.date) + '</div>' +
-      '</div>' +
-    '</div>';
-  }).join('') : '<div class="empty">Nothing due this week</div>';
+  document.getElementById('homeWeekList').innerHTML   = week.length ? week.map(txRowHTML).join('') : '<div class="empty">Nothing due this week</div>';
 }
 
-function openPocketModal(accountId, pocketId) {
-  pocketAccountId = accountId;
-  vEditId = pocketId || null;
-  document.getElementById('pocketModalTitle').textContent = vEditId ? 'Edit Pocket' : 'Add Pocket';
-  var delBtn = document.getElementById('pocketDelBtn');
-  delBtn.classList.toggle('visible', !!vEditId);
-
-  if (vEditId) {
-    var p = (data.pockets||[]).find(function(x) { return x.id === vEditId; });
-    if (p) {
-      document.getElementById('pocketName').value    = p.name;
-      document.getElementById('pocketBalance').value = p.balance;
-      document.getElementById('pocketNote').value    = p.note || '';
-    }
-  } else {
-    document.getElementById('pocketName').value    = '';
-    document.getElementById('pocketBalance').value = '';
-    document.getElementById('pocketNote').value    = '';
-  }
-  document.getElementById('modalPocket').classList.add('open');
-}
-
-function savePocket() {
-  var name    = document.getElementById('pocketName').value.trim();
-  var balance = parseFloat(document.getElementById('pocketBalance').value) || 0;
-  var note    = document.getElementById('pocketNote').value.trim();
-  if (!name) { document.getElementById('pocketName').focus(); return; }
-
-  data.pockets = data.pockets || [];
-  if (vEditId) {
-    var idx = data.pockets.findIndex(function(x) { return x.id === vEditId; });
-    if (idx > -1) data.pockets[idx] = { id: vEditId, accountId: pocketAccountId, name: name, balance: balance, note: note };
-  } else {
-    data.pockets.push({ id: uid(), accountId: pocketAccountId, name: name, balance: balance, note: note });
-    expandedAccounts[pocketAccountId] = true;
-  }
-  save();
-  closeVModal('modalPocket');
-  renderVault();
-}
-
-function deletePocket() {
-  if (!vEditId) return;
-  data.pockets = (data.pockets||[]).filter(function(x) { return x.id !== vEditId; });
-  save();
-  closeVModal('modalPocket');
-  renderVault();
-}
-
-function toggleAccount(id) {
-  expandedAccounts[id] = !expandedAccounts[id];
-  var wrap    = document.getElementById('pockets-' + id);
-  var chevron = document.getElementById('chevron-' + id);
-  animateCard(wrap, chevron, !!expandedAccounts[id]);
-}
-
-var debtCardOpen = false;
-var subsCardOpen = false;
-var invsCardOpen = false;
-
+// ── Vault tab ──
 function animateCard(bodyEl, chevronEl, open) {
   chevronEl.classList.toggle('open', open);
   bodyEl.style.transition = 'height 0.3s cubic-bezier(0.4,0,0.2,1)';
   bodyEl.style.overflow   = 'hidden';
   if (open) {
-    var h = bodyEl.scrollHeight;
-    bodyEl.style.height = h + 'px';
-    var rect = bodyEl.getBoundingClientRect();
-    var projected = rect.top + h;
-    var viewBottom = window.innerHeight - 96;
-    if (projected > viewBottom) {
-      bodyEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
+    bodyEl.style.height = bodyEl.scrollHeight + 'px';
     setTimeout(function() { bodyEl.style.height = 'auto'; }, 310);
   } else {
     bodyEl.style.height = bodyEl.scrollHeight + 'px';
@@ -2079,408 +1059,277 @@ function animateCard(bodyEl, chevronEl, open) {
   }
 }
 
-function toggleDebtCard() {
-  debtCardOpen = !debtCardOpen;
-  animateCard(document.getElementById('debtCardBody'), document.getElementById('debtChevron'), debtCardOpen);
+function toggleDebtCard() { debtCardOpen = !debtCardOpen; animateCard(document.getElementById('debtCardBody'), document.getElementById('debtChevron'), debtCardOpen); }
+function toggleSubsCard()  { subsCardOpen = !subsCardOpen; animateCard(document.getElementById('subsCardBody'), document.getElementById('subsChevron'), subsCardOpen); }
+function toggleInvsCard()  { invsCardOpen = !invsCardOpen; animateCard(document.getElementById('invsCardBody'), document.getElementById('invsChevron'), invsCardOpen); }
+
+function toggleAccount(id) {
+  expandedAccounts[id] = !expandedAccounts[id];
+  animateCard(document.getElementById('pockets-' + id), document.getElementById('chevron-' + id), !!expandedAccounts[id]);
 }
 
-function toggleSubsCard() {
-  subsCardOpen = !subsCardOpen;
-  animateCard(document.getElementById('subsCardBody'), document.getElementById('subsChevron'), subsCardOpen);
-}
-
-function toggleInvsCard() {
-  invsCardOpen = !invsCardOpen;
-  animateCard(document.getElementById('invsCardBody'), document.getElementById('invsChevron'), invsCardOpen);
-}
-
-// ═══════════════════════════════════════════
-// VAULT TAB
-// ═══════════════════════════════════════════
 function renderVault() {
-  var eurSum  = (data.eurAccounts||[]).reduce(function(s,a) { return s + (a.balance||0); }, 0);
-  var debtSum = (data.debts||[]).reduce(function(s,d) { return s + (d.remaining||0); }, 0);
-  var invVal  = (data.investments||[]).reduce(function(s,i) { return s + (i.currentValue||0); }, 0);
-
-  var total = eurSum + invVal + debtSum;
-  var accPct  = total ? Math.round((eurSum / total) * 100) : 0;
-  var invPct  = total ? Math.round((invVal / total) * 100) : 0;
+  var eurSum  = (data.eurAccounts || []).reduce(function(s,a) { return s + (a.balance || 0); }, 0);
+  var debtSum = (data.debts || []).reduce(function(s,d) { return s + (d.remaining || 0); }, 0);
+  var invVal  = (data.investments || []).reduce(function(s,i) { return s + (i.currentValue || 0); }, 0);
+  var total   = eurSum + invVal + debtSum;
+  var accPct  = total ? Math.round((eurSum  / total) * 100) : 0;
+  var invPct  = total ? Math.round((invVal  / total) * 100) : 0;
   var debtPct = total ? Math.round((debtSum / total) * 100) : 0;
 
   document.getElementById('vaultAllocBars').innerHTML =
-    '<div class="vault-alloc-bar accounts" style="width:' + accPct + '%"></div>' +
-    '<div class="vault-alloc-bar investments" style="width:' + invPct + '%"></div>' +
-    '<div class="vault-alloc-bar debts" style="width:' + debtPct + '%"></div>';
+    '<div class="vault-alloc-bar accounts"    style="width:' + accPct  + '%"></div>' +
+    '<div class="vault-alloc-bar investments" style="width:' + invPct  + '%"></div>' +
+    '<div class="vault-alloc-bar debts"       style="width:' + debtPct + '%"></div>';
 
+  function allocRow(cls, label, pct, val, color) {
+    return '<div class="vault-alloc-row"><div class="vault-alloc-left"><div class="vault-alloc-dot ' + cls + '"></div><div class="vault-alloc-name">' + label + '</div><div class="vault-alloc-pct">' + pct + '%</div></div><div class="vault-alloc-val"' + (color ? ' style="color:' + color + '"' : '') + '>' + val + '</div></div>';
+  }
   document.getElementById('vaultAllocRows').innerHTML =
-    '<div class="vault-alloc-row">' +
-      '<div class="vault-alloc-left">' +
-        '<div class="vault-alloc-dot accounts"></div>' +
-        '<div class="vault-alloc-name">Accounts</div>' +
-        '<div class="vault-alloc-pct">' + accPct + '%</div>' +
-      '</div>' +
-      '<div class="vault-alloc-val">' + fmtEur(eurSum) + '</div>' +
-    '</div>' +
-    '<div class="vault-alloc-row">' +
-      '<div class="vault-alloc-left">' +
-        '<div class="vault-alloc-dot investments"></div>' +
-        '<div class="vault-alloc-name">Investments</div>' +
-        '<div class="vault-alloc-pct">' + invPct + '%</div>' +
-      '</div>' +
-      '<div class="vault-alloc-val" style="color:var(--green)">' + fmtEur(invVal) + '</div>' +
-    '</div>' +
-    '<div class="vault-alloc-row">' +
-      '<div class="vault-alloc-left">' +
-        '<div class="vault-alloc-dot debts"></div>' +
-        '<div class="vault-alloc-name">Debts</div>' +
-        '<div class="vault-alloc-pct">' + debtPct + '%</div>' +
-      '</div>' +
-      '<div class="vault-alloc-val" style="color:var(--red)">\u2212' + fmtEur(debtSum) + '</div>' +
-    '</div>';
+    allocRow('accounts',    'Accounts',    accPct,  fmtEur(eurSum),  null) +
+    allocRow('investments', 'Investments', invPct,  fmtEur(invVal),  'var(--green)') +
+    allocRow('debts',       'Debts',       debtPct, '\u2212' + fmtEur(debtSum), 'var(--red)');
 
   // Accounts
   var accs = allAccounts();
   document.getElementById('vaultAccounts').innerHTML = accs.length ? accs.map(function(a) {
-    var bal = a.currency === 'IDR' ? fmtIdr(a.balance) : fmtEurDec(a.balance);
-    var accPockets = (data.pockets||[]).filter(function(p) { return p.accountId === a.id; });
-    var isOpen = !!expandedAccounts[a.id];
-    var pocketSum = accPockets.reduce(function(s,p) { return s + (p.balance||0); }, 0);
-    var unallocated = (a.balance||0) - pocketSum;
-    var unallocFmt = a.currency === 'IDR' ? fmtIdr(unallocated) : fmtEurDec(unallocated);
+    var bal        = fmtAmt(a.balance, a.currency);
+    var accPockets = (data.pockets || []).filter(function(p) { return p.accountId === a.id; });
+    var isOpen     = !!expandedAccounts[a.id];
+    var pocketSum  = accPockets.reduce(function(s,p) { return s + (p.balance || 0); }, 0);
+    var unallocFmt = fmtAmt((a.balance || 0) - pocketSum, a.currency);
 
     var pocketRows = accPockets.map(function(p) {
-      var pBal = a.currency === 'IDR' ? fmtIdr(p.balance) : fmtEurDec(p.balance);
-      return '<div class="pocket-row" onclick="openPocketModal(\'' + a.id + '\',\'' + p.id + '\')">' +
-        '<div>' +
-          '<div class="pocket-name">' + p.name + '</div>' +
-          (p.note ? '<div class="pocket-note">' + p.note + '</div>' : '') +
-        '</div>' +
-        '<div class="pocket-balance">' + pBal + '</div>' +
-      '</div>';
+      return '<div class="pocket-row" data-aid="' + a.id + '" data-pid="' + p.id + '" onclick="openPocketModal(this.dataset.aid,this.dataset.pid)">' +
+        '<div><div class="pocket-name">' + p.name + '</div>' + (p.note ? '<div class="pocket-note">' + p.note + '</div>' : '') + '</div>' +
+        '<div class="pocket-balance">' + fmtAmt(p.balance, a.currency) + '</div></div>';
     }).join('');
 
-    var hasPockets = accPockets.length > 0;
+    var footerBtns =
+      '<button class="pocket-edit-btn" data-aid="' + a.id + '" onclick="event.stopPropagation();openReconcileModal(this.dataset.aid)">Reconcile</button>' +
+      '<button class="pocket-edit-btn" data-aid="' + a.id + '" data-cur="' + a.currency + '" onclick="event.stopPropagation();openVModal(\'modalAccount\',this.dataset.aid,this.dataset.cur)">Edit</button>';
 
-    var innerContent = hasPockets
-      ? '<div class="pocket-unallocated">' +
-            '<div class="pocket-unallocated-label">Unallocated</div>' +
-            '<div class="pocket-unallocated-val">' + unallocFmt + '</div>' +
-          '</div>' +
-          pocketRows +
-          '<div class="pocket-footer">' +
-            '<button class="pocket-add-btn" onclick="openPocketModal(\'' + a.id + '\')">+ Add pocket</button>' +
-            '<div style="display:flex;align-items:center;gap:12px;">' +
-              '<button class="pocket-edit-btn" onclick="openReconcileModal(\'' + a.id + '\')">Reconcile</button>' +
-              '<div class="pocket-divider"></div>' +
-              '<button class="pocket-edit-btn" onclick="openVModal(\'modalAccount\',\'' + a.id + '\',\'' + a.currency + '\')">Edit</button>' +
-            '</div>' +
-          '</div>'
-      : '<div style="padding:10px 0;display:flex;justify-content:space-between;align-items:center;">' +
-          '<button class="pocket-add-btn" onclick="openPocketModal(\'' + a.id + '\')">+ Add pocket</button>' +
-          '<div style="display:flex;align-items:center;gap:12px;">' +
-            '<button class="pocket-edit-btn" onclick="openReconcileModal(\'' + a.id + '\')">Reconcile</button>' +
-            '<div class="pocket-divider"></div>' +
-            '<button class="pocket-edit-btn" onclick="openVModal(\'modalAccount\',\'' + a.id + '\',\'' + a.currency + '\')">Edit</button>' +
-          '</div>' +
-        '</div>';
+    var inner = accPockets.length
+      ? '<div class="pocket-unallocated"><div class="pocket-unallocated-label">Unallocated</div><div class="pocket-unallocated-val">' + unallocFmt + '</div></div>' +
+        pocketRows +
+        '<div class="pocket-footer"><button class="pocket-add-btn" data-aid="' + a.id + '" onclick="openPocketModal(this.dataset.aid)">+ Add pocket</button><div style="display:flex;gap:16px;">' + footerBtns + '</div></div>'
+      : '<div style="padding:10px 0;display:flex;justify-content:space-between;align-items:center;"><button class="pocket-add-btn" data-aid="' + a.id + '" onclick="openPocketModal(this.dataset.aid)">+ Add pocket</button><div style="display:flex;gap:16px;">' + footerBtns + '</div></div>';
 
     return '<div class="account-row">' +
-      '<div class="account-summary" onclick="toggleAccount(\'' + a.id + '\')">' +
-        '<div>' +
-          '<div class="account-name" style="font-family:\'Manrope\',sans-serif;font-size:15px;font-weight:600;">' + a.name + '</div>' +
-          '<div class="account-sub" style="font-family:\'Manrope\',sans-serif;">' + a.currency + (a.note ? ' \u00B7 ' + a.note : '') + '</div>' +
-        '</div>' +
-        '<div style="display:flex;align-items:center;gap:12px;">' +
-          '<div class="account-balance" style="font-family:\'Martian Mono\',monospace;font-size:13px;font-weight:400;">' + bal + '</div>' +
-          '<div class="account-chevron' + (isOpen ? ' open' : '') + '" id="chevron-' + a.id + '">&#9660;</div>' +
-        '</div>' +
+      '<div class="account-summary" data-id="' + a.id + '" onclick="toggleAccount(this.dataset.id)">' +
+        '<div><div class="account-name">' + a.name + '</div><div class="account-sub">' + a.currency + (a.note ? ' \u00B7 ' + a.note : '') + '</div></div>' +
+        '<div style="display:flex;align-items:center;gap:12px;"><div class="account-balance">' + bal + '</div><div class="account-chevron' + (isOpen ? ' open' : '') + '" id="chevron-' + a.id + '">&#9660;</div></div>' +
       '</div>' +
-      '<div class="pockets-wrap" id="pockets-' + a.id + '" style="height:' + (isOpen ? 'auto' : '0') + ';overflow:hidden;">' +
-        '<div class="pocket-list">' +
-          innerContent +
-        '</div>' +
-      '</div>' +
+      '<div class="pockets-wrap" id="pockets-' + a.id + '" style="height:' + (isOpen ? 'auto' : '0') + ';overflow:hidden;"><div class="pocket-list">' + inner + '</div></div>' +
     '</div>';
   }).join('') : '<div class="empty">No accounts</div>';
 
-  // Debt card summary
-  var debtRemaining = (data.debts||[]).reduce(function(s,d) { return s + (d.remaining||0); }, 0);
-  var debtMonthly   = (data.debts||[]).reduce(function(s,d) { return s + (d.monthly||0); }, 0);
-  var debtMonthsLeft = (data.debts||[]).reduce(function(s,d) { return s + (d.months || Math.round((d.remaining||0) / (d.monthly||1))); }, 0);
-  var debtCount = (data.debts||[]).length;
-  document.getElementById('debtCardTotal').textContent = debtCount ? fmtEurDec(debtRemaining) : '—';
-  document.getElementById('debtCardTotal').style.color = debtCount ? 'var(--red)' : 'var(--muted)';
-  var metaParts = [];
-  if (debtCount) metaParts.push(debtCount + (debtCount === 1 ? ' debt' : ' debts'));
-  if (debtMonthly) metaParts.push(fmtEurDec(debtMonthly) + ' / mo');
-  if (debtMonthsLeft) metaParts.push(debtMonthsLeft + ' mo left');
-  document.getElementById('debtCardMeta').textContent = metaParts.join(' · ');
-
   // Debts
-  document.getElementById('vaultDebts').innerHTML = (data.debts||[]).length ? (data.debts||[]).map(function(d) {
-    var paid = (d.totalMonths||0) - (d.months||0);
+  var debtRemaining  = (data.debts || []).reduce(function(s,d) { return s + (d.remaining || 0); }, 0);
+  var debtMonthly    = (data.debts || []).reduce(function(s,d) { return s + (d.monthly || 0); }, 0);
+  var debtMonthsLeft = (data.debts || []).reduce(function(s,d) { return s + (d.months || Math.round((d.remaining || 0) / (d.monthly || 1))); }, 0);
+  var debtCount      = (data.debts || []).length;
+  document.getElementById('debtCardTotal').textContent = debtCount ? fmtEurDec(debtRemaining) : '\u2014';
+  document.getElementById('debtCardTotal').style.color = debtCount ? 'var(--red)' : 'var(--muted)';
+  var dMeta = [];
+  if (debtCount)      dMeta.push(debtCount + (debtCount === 1 ? ' debt' : ' debts'));
+  if (debtMonthly)    dMeta.push(fmtEurDec(debtMonthly) + ' / mo');
+  if (debtMonthsLeft) dMeta.push(debtMonthsLeft + ' mo left');
+  document.getElementById('debtCardMeta').textContent = dMeta.join(' \u00B7 ');
+  document.getElementById('vaultDebts').innerHTML = debtCount ? (data.debts || []).map(function(d) {
+    var paid = (d.totalMonths || 0) - (d.months || 0);
     var pct  = d.total ? Math.round(((d.total - d.remaining) / d.total) * 100) : 0;
-    return '<div class="debt-row vault-row-clickable" onclick="openVModal(\'modalDebt\',\'' + d.id + '\')">' +
-      '<div class="debt-main">' +
-        '<div>' +
-          '<div class="debt-name">' + d.name + '</div>' +
-          '<div class="debt-detail">' + paid + ' of ' + d.totalMonths + ' months paid</div>' +
-        '</div>' +
-        '<div>' +
-          '<div class="debt-remaining">' + fmtAmt(d.remaining, d.currency) + '</div>' +
-          '<div class="debt-monthly">' + fmtAmt(d.monthly, d.currency) + ' / mo</div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="debt-bar"><div class="debt-bar-fill" style="width:' + pct + '%"></div></div>' +
-    '</div>';
+    return '<div class="debt-row vault-row-clickable" data-id="' + d.id + '" onclick="openVModal(\'modalDebt\',this.dataset.id)">' +
+      '<div class="debt-main"><div><div class="debt-name">' + d.name + '</div><div class="debt-detail">' + paid + ' of ' + d.totalMonths + ' months paid</div></div>' +
+      '<div><div class="debt-remaining">' + fmtAmt(d.remaining, d.currency) + '</div><div class="debt-monthly">' + fmtAmt(d.monthly, d.currency) + ' / mo</div></div></div>' +
+      '<div class="debt-bar"><div class="debt-bar-fill" style="width:' + pct + '%"></div></div></div>';
   }).join('') : '<div class="empty">No debts</div>';
 
-  // Subscriptions card summary
-  var subsMonthly = (data.subscriptions||[]).reduce(function(s,sub) {
-    var amt = sub.renewal === 'yearly' ? sub.amount / 12 : sub.amount;
-    return s + (sub.currency === 'EUR' ? amt : 0);
-  }, 0);
-  var subsCount = (data.subscriptions||[]).length;
-  document.getElementById('subsCardTotal').textContent = subsCount ? fmtEurDec(subsMonthly) + ' / mo' : '—';
-  document.getElementById('subsCardTotal').style.color = subsCount ? 'var(--fg)' : 'var(--muted)';
-  document.getElementById('subsCardMeta').textContent = subsCount ? subsCount + (subsCount === 1 ? ' subscription' : ' subscriptions') : 'No subscriptions';
-
-  // Investments card summary
-  var invTotal    = (data.investments||[]).reduce(function(s,i) { return s + (i.currentValue||0); }, 0);
-  var invInvested = (data.investments||[]).reduce(function(s,i) { return s + (i.totalInvested||0); }, 0);
-  var invGain     = invTotal - invInvested;
-  var invGainPct  = invInvested > 0 ? ((invGain / invInvested) * 100).toFixed(1) : '0.0';
-  var invsCount   = (data.investments||[]).length;
-  document.getElementById('invsCardTotal').textContent = invsCount ? fmtEur(invTotal) : '—';
-  document.getElementById('invsCardTotal').style.color = invsCount ? (invGain >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--muted)';
-  document.getElementById('invsCardMeta').textContent = invsCount ? invsCount + ' positions · ' + (invGain >= 0 ? '+' : '') + fmtEur(invGain) + ' (' + (invGain >= 0 ? '+' : '') + invGainPct + '%)' : 'No investments';
-
   // Subscriptions
-  document.getElementById('vaultSubs').innerHTML = (data.subscriptions||[]).length ? (data.subscriptions||[]).map(function(s) {
-    return '<div class="sub-row vault-row-clickable" onclick="openVModal(\'modalSub\',\'' + s.id + '\')">' +
-      '<div>' +
-        '<div class="sub-name">' + s.name + '</div>' +
-        '<div class="sub-detail">' + (s.renewal||'') + (s.accountName ? ' \u00B7 ' + s.accountName : '') + '</div>' +
-      '</div>' +
-      '<div>' +
-        '<div class="sub-amount">' + fmtAmt(s.amount, s.currency) + '</div>' +
-        '<div class="sub-next">next ' + fmtDate(s.nextDate) + '</div>' +
-      '</div>' +
-    '</div>';
+  var subsMonthly = (data.subscriptions || []).reduce(function(s,sub) {
+    return s + (sub.currency === 'EUR' ? (sub.renewal === 'yearly' ? sub.amount / 12 : sub.amount) : 0);
+  }, 0);
+  var subsCount = (data.subscriptions || []).length;
+  document.getElementById('subsCardTotal').textContent = subsCount ? fmtEurDec(subsMonthly) + ' / mo' : '\u2014';
+  document.getElementById('subsCardTotal').style.color = subsCount ? 'var(--fg)' : 'var(--muted)';
+  document.getElementById('subsCardMeta').textContent  = subsCount ? subsCount + (subsCount === 1 ? ' subscription' : ' subscriptions') : 'No subscriptions';
+  document.getElementById('vaultSubs').innerHTML = subsCount ? (data.subscriptions || []).map(function(s) {
+    return '<div class="sub-row vault-row-clickable" data-id="' + s.id + '" onclick="openVModal(\'modalSub\',this.dataset.id)">' +
+      '<div><div class="sub-name">' + s.name + '</div><div class="sub-detail">' + (s.renewal || '') + (s.accountName ? ' \u00B7 ' + s.accountName : '') + '</div></div>' +
+      '<div><div class="sub-amount">' + fmtAmt(s.amount, s.currency) + '</div><div class="sub-next">next ' + fmtDate(s.nextDate) + '</div></div></div>';
   }).join('') : '<div class="empty">No subscriptions</div>';
 
   // Investments
-  document.getElementById('vaultInvs').innerHTML = (data.investments||[]).length ? (data.investments||[]).map(function(i) {
-    var gain    = (i.currentValue||0) - (i.totalInvested||0);
+  var invTotal    = (data.investments || []).reduce(function(s,i) { return s + (i.currentValue || 0); }, 0);
+  var invInvested = (data.investments || []).reduce(function(s,i) { return s + (i.totalInvested || 0); }, 0);
+  var invGain     = invTotal - invInvested;
+  var invGainPct  = invInvested > 0 ? ((invGain / invInvested) * 100).toFixed(1) : '0.0';
+  var invsCount   = (data.investments || []).length;
+  document.getElementById('invsCardTotal').textContent = invsCount ? fmtEur(invTotal) : '\u2014';
+  document.getElementById('invsCardTotal').style.color = invsCount ? (invGain >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--muted)';
+  document.getElementById('invsCardMeta').textContent  = invsCount ? invsCount + ' positions \u00B7 ' + (invGain >= 0 ? '+' : '') + fmtEur(invGain) + ' (' + (invGain >= 0 ? '+' : '') + invGainPct + '%)' : 'No investments';
+  document.getElementById('vaultInvs').innerHTML = invsCount ? (data.investments || []).map(function(i) {
+    var gain    = (i.currentValue || 0) - (i.totalInvested || 0);
     var gainPct = i.totalInvested ? ((gain / i.totalInvested) * 100).toFixed(1) : '0.0';
     var isUp    = gain >= 0;
-    var gainStr = (isUp ? '+' : '') + fmtAmt(Math.abs(gain), i.currency) + ' (' + (isUp ? '+' : '') + gainPct + '%)';
-    return '<div class="inv-row vault-row-clickable" onclick="openVModal(\'modalInv\',\'' + i.id + '\')">' +
-      '<div class="inv-main">' +
-        '<div>' +
-          '<div class="inv-name">' + i.name + '</div>' +
-          '<div class="inv-type">' + (i.type||'') + '</div>' +
-        '</div>' +
-        '<div>' +
-          '<div class="inv-value ' + (isUp ? 'up' : '') + '">' + fmtAmt(i.currentValue, i.currency) + '</div>' +
-          '<div class="inv-gain ' + (isUp ? 'up' : 'down') + '">' + gainStr + '</div>' +
-        '</div>' +
-      '</div>' +
+    return '<div class="inv-row vault-row-clickable" data-id="' + i.id + '" onclick="openVModal(\'modalInv\',this.dataset.id)">' +
+      '<div class="inv-main"><div><div class="inv-name">' + i.name + '</div><div class="inv-type">' + (i.type || '') + '</div></div>' +
+      '<div><div class="inv-value' + (isUp ? ' up' : '') + '">' + fmtAmt(i.currentValue, i.currency) + '</div><div class="inv-gain' + (isUp ? ' up' : ' down') + '">' + (isUp ? '+' : '') + fmtAmt(Math.abs(gain), i.currency) + ' (' + (isUp ? '+' : '') + gainPct + '%)</div></div></div>' +
       (i.monthlyAmount ? '<div class="inv-monthly">' + fmtAmt(i.monthlyAmount, i.currency) + ' / mo sparplan</div>' : '') +
     '</div>';
   }).join('') : '<div class="empty">No investments</div>';
 }
 
-// ═══════════════════════════════════════════
-// VAULT MODALS
-// ═══════════════════════════════════════════
-var vEditId   = null;
-var vEditType = null;
-var pocketAccountId = null;
-var expandedAccounts = {};
+// ── Pocket modal ──
+function openPocketModal(accountId, pocketId) {
+  pocketAccountId = accountId;
+  vEditId = pocketId || null;
+  document.getElementById('pocketModalTitle').textContent = vEditId ? 'Edit Pocket' : 'Add Pocket';
+  document.getElementById('pocketDelBtn').classList.toggle('visible', !!vEditId);
+  if (vEditId) {
+    var p = (data.pockets || []).find(function(x) { return x.id === vEditId; });
+    if (p) { document.getElementById('pocketName').value = p.name; document.getElementById('pocketBalance').value = fmtForInput(p.balance); document.getElementById('pocketNote').value = p.note || ''; }
+  } else {
+    document.getElementById('pocketName').value = ''; document.getElementById('pocketBalance').value = ''; document.getElementById('pocketNote').value = '';
+  }
+  document.getElementById('modalPocket').classList.add('open');
+}
+function savePocket() {
+  var name    = document.getElementById('pocketName').value.trim();
+  var balance = parseNum('pocketBalance');
+  var note    = document.getElementById('pocketNote').value.trim();
+  if (!name) { document.getElementById('pocketName').focus(); return; }
+  data.pockets = data.pockets || [];
+  if (vEditId) {
+    var idx = data.pockets.findIndex(function(x) { return x.id === vEditId; });
+    if (idx > -1) data.pockets[idx] = { id:vEditId, accountId:pocketAccountId, name:name, balance:balance, note:note };
+  } else {
+    data.pockets.push({ id:uid(), accountId:pocketAccountId, name:name, balance:balance, note:note });
+    expandedAccounts[pocketAccountId] = true;
+  }
+  save(); closeVModal('modalPocket'); renderVault();
+}
+function deletePocket() {
+  if (!vEditId) return;
+  data.pockets = (data.pockets || []).filter(function(x) { return x.id !== vEditId; });
+  save(); closeVModal('modalPocket'); renderVault();
+}
 
+// ── Vault modals ──
 function openVModal(id, editId, type) {
   vEditId   = editId || null;
   vEditType = type   || null;
-
-  // Toggle delete button visibility
-  var delMap = { modalAccount:'accDelBtn', modalDebt:'debtDelBtn', modalSub:'subDelBtn', modalInv:'invDelBtn' };
-  var delBtn = document.getElementById(delMap[id]);
-  if (delBtn) delBtn.classList.toggle('visible', !!vEditId);
-
-  // Update modal title
+  var delMap   = { modalAccount:'accDelBtn', modalDebt:'debtDelBtn', modalSub:'subDelBtn', modalInv:'invDelBtn' };
   var titleMap = { modalAccount:'Account', modalDebt:'Debt', modalSub:'Subscription', modalInv:'Investment' };
+  var delBtn   = document.getElementById(delMap[id]);
+  if (delBtn) delBtn.classList.toggle('visible', !!vEditId);
   var titleEl = document.querySelector('#' + id + ' .vmodal-title');
   if (titleEl) titleEl.textContent = (vEditId ? 'Edit' : 'Add') + ' ' + (titleMap[id] || '');
 
-  // Populate sub account dropdown
-  var accs = allAccounts();
   var subAccEl = document.getElementById('subAccount');
-  if (subAccEl) {
-    subAccEl.innerHTML = accs.map(function(a) {
-      return '<option value="' + a.name + '">' + a.name + '</option>';
-    }).join('');
-  }
+  if (subAccEl) subAccEl.innerHTML = allAccounts().map(function(a) { return '<option value="' + a.name + '">' + a.name + '</option>'; }).join('');
 
-  // Pre-fill if editing
   if (vEditId) {
     if (id === 'modalAccount') {
-      var arr = (type === 'IDR' ? data.idrAccounts : data.eurAccounts) || [];
-      var a = arr.find(function(x) { return x.id === vEditId; });
-      if (a) {
-        document.getElementById('accName').value     = a.name;
-        document.getElementById('accCurrency').value = a.currency;
-        document.getElementById('accBalance').value  = a.balance;
-        document.getElementById('accNote').value     = a.note || '';
-      }
+      var a = ((type === 'IDR' ? data.idrAccounts : data.eurAccounts) || []).find(function(x) { return x.id === vEditId; });
+      if (a) { document.getElementById('accName').value = a.name; document.getElementById('accCurrency').value = a.currency; document.getElementById('accBalance').value = fmtForInput(a.balance); document.getElementById('accNote').value = a.note || ''; }
     } else if (id === 'modalDebt') {
-      var d = (data.debts||[]).find(function(x) { return x.id === vEditId; });
-      if (d) {
-        document.getElementById('debtName').value      = d.name;
-        document.getElementById('debtCurrency').value  = d.currency;
-        document.getElementById('debtTotal').value     = d.total;
-        document.getElementById('debtRemaining').value = d.remaining;
-        document.getElementById('debtMonthly').value   = d.monthly;
-      }
+      var d = (data.debts || []).find(function(x) { return x.id === vEditId; });
+      if (d) { document.getElementById('debtName').value = d.name; document.getElementById('debtCurrency').value = d.currency; document.getElementById('debtTotal').value = fmtForInput(d.total); document.getElementById('debtRemaining').value = fmtForInput(d.remaining); document.getElementById('debtMonthly').value = fmtForInput(d.monthly); }
     } else if (id === 'modalSub') {
-      var s = (data.subscriptions||[]).find(function(x) { return x.id === vEditId; });
-      if (s) {
-        document.getElementById('subName').value     = s.name;
-        document.getElementById('subCurrency').value = s.currency;
-        document.getElementById('subAmount').value   = s.amount;
-        document.getElementById('subRenewal').value  = s.renewal;
-        document.getElementById('subAccount').value  = s.accountName;
-        document.getElementById('subNextDate').value = s.nextDate || today();
-      }
+      var s = (data.subscriptions || []).find(function(x) { return x.id === vEditId; });
+      if (s) { document.getElementById('subName').value = s.name; document.getElementById('subCurrency').value = s.currency; document.getElementById('subAmount').value = fmtForInput(s.amount); document.getElementById('subRenewal').value = s.renewal; document.getElementById('subAccount').value = s.accountName; document.getElementById('subNextDate').value = s.nextDate || today(); }
     } else if (id === 'modalInv') {
-      var inv = (data.investments||[]).find(function(x) { return x.id === vEditId; });
-      if (inv) {
-        document.getElementById('invName').value     = inv.name;
-        document.getElementById('invType').value     = inv.type;
-        document.getElementById('invCurrency').value = inv.currency;
-        document.getElementById('invInvested').value = inv.totalInvested;
-        document.getElementById('invValue').value    = inv.currentValue;
-        document.getElementById('invMonthly').value  = inv.monthlyAmount || '';
-      }
+      var inv = (data.investments || []).find(function(x) { return x.id === vEditId; });
+      if (inv) { document.getElementById('invName').value = inv.name; document.getElementById('invType').value = inv.type; document.getElementById('invCurrency').value = inv.currency; document.getElementById('invInvested').value = fmtForInput(inv.totalInvested); document.getElementById('invValue').value = fmtForInput(inv.currentValue); document.getElementById('invMonthly').value = inv.monthlyAmount ? fmtForInput(inv.monthlyAmount) : ''; }
     }
   } else {
-    // Clear fields for add mode
     if (id === 'modalAccount') clearInputs(['accName','accBalance','accNote']);
     if (id === 'modalDebt')    clearInputs(['debtName','debtTotal','debtRemaining','debtMonthly']);
     if (id === 'modalSub')     { clearInputs(['subName','subAmount']); document.getElementById('subNextDate').value = today(); }
     if (id === 'modalInv')     clearInputs(['invName','invInvested','invValue','invMonthly']);
   }
-
   document.getElementById(id).classList.add('open');
 }
+function closeVModal(id) { document.getElementById(id).classList.remove('open'); vEditId = null; vEditType = null; }
 
-function closeVModal(id) {
-  document.getElementById(id).classList.remove('open');
-  vEditId = null; vEditType = null;
-}
-
-// Close on overlay click
 ['modalAccount','modalDebt','modalSub','modalInv','modalPocket','modalReconcile'].forEach(function(id) {
-  document.getElementById(id).addEventListener('click', function(e) {
-    if (e.target === this) closeVModal(id);
-  });
+  document.getElementById(id).addEventListener('click', function(e) { if (e.target === this) closeVModal(id); });
 });
 
 function clearInputs(ids) {
   ids.forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
-    if (el.tagName === 'SELECT') el.selectedIndex = 0;
-    else el.value = '';
+    if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = '';
   });
 }
 
 function saveAccount() {
   var name     = document.getElementById('accName').value.trim();
   var currency = document.getElementById('accCurrency').value;
-  var balance  = parseFloat(document.getElementById('accBalance').value) || 0;
+  var balance  = parseNum('accBalance');
   var note     = document.getElementById('accNote').value.trim();
   if (!name) { document.getElementById('accName').focus(); return; }
-
   if (vEditId) {
     var arr = currency === 'IDR' ? data.idrAccounts : data.eurAccounts;
-    var idx = arr.findIndex(function(x) { return x.id === vEditId; });
-    // If currency changed, remove from old array and add to new
     if (vEditType && vEditType !== currency) {
       var oldArr = vEditType === 'IDR' ? data.idrAccounts : data.eurAccounts;
-      data[vEditType === 'IDR' ? 'idrAccounts' : 'eurAccounts'] =
-        oldArr.filter(function(x) { return x.id !== vEditId; });
+      data[vEditType === 'IDR' ? 'idrAccounts' : 'eurAccounts'] = oldArr.filter(function(x) { return x.id !== vEditId; });
       arr = currency === 'IDR' ? data.idrAccounts : data.eurAccounts;
-      arr.push({ id: vEditId, name: name, balance: balance, rate: 0, note: note, currency: currency });
-    } else if (idx > -1) {
-      arr[idx] = { id: vEditId, name: name, balance: balance, rate: 0, note: note, currency: currency };
+      arr.push({ id:vEditId, name:name, balance:balance, note:note, currency:currency });
+    } else {
+      var idx = arr.findIndex(function(x) { return x.id === vEditId; });
+      if (idx > -1) arr[idx] = { id:vEditId, name:name, balance:balance, note:note, currency:currency };
     }
   } else {
-    var acc = { id: uid(), name: name, balance: balance, rate: 0, note: note, currency: currency };
+    var acc = { id:uid(), name:name, balance:balance, note:note, currency:currency };
     if (currency === 'IDR') { data.idrAccounts = data.idrAccounts || []; data.idrAccounts.push(acc); }
     else                    { data.eurAccounts = data.eurAccounts || []; data.eurAccounts.push(acc); }
   }
   save(); closeVModal('modalAccount'); renderVault();
 }
-
 function deleteAccount() {
   if (!vEditId) return;
-  data.eurAccounts = (data.eurAccounts||[]).filter(function(x) { return x.id !== vEditId; });
-  data.idrAccounts = (data.idrAccounts||[]).filter(function(x) { return x.id !== vEditId; });
+  data.eurAccounts = (data.eurAccounts || []).filter(function(x) { return x.id !== vEditId; });
+  data.idrAccounts = (data.idrAccounts || []).filter(function(x) { return x.id !== vEditId; });
   save(); closeVModal('modalAccount'); renderVault();
 }
 
 function saveDebt() {
   var name      = document.getElementById('debtName').value.trim();
   var currency  = document.getElementById('debtCurrency').value;
-  var total     = parseFloat(document.getElementById('debtTotal').value) || 0;
-  var remaining = parseFloat(document.getElementById('debtRemaining').value) || 0;
-  var monthly   = parseFloat(document.getElementById('debtMonthly').value) || 0;
+  var total     = parseNum('debtTotal');
+  var remaining = parseNum('debtRemaining');
+  var monthly   = parseNum('debtMonthly');
   if (!name) { document.getElementById('debtName').focus(); return; }
-
-  var totalMonths = monthly > 0 ? Math.round(total / monthly) : 0;
-  var months      = monthly > 0 ? Math.round(remaining / monthly) : 0;
-
-  var obj = { id: vEditId || uid(), name: name, total: total, remaining: remaining, monthly: monthly, totalMonths: totalMonths, months: months, currency: currency };
-  if (vEditId) {
-    var idx = (data.debts||[]).findIndex(function(x) { return x.id === vEditId; });
-    if (idx > -1) data.debts[idx] = obj;
-  } else {
-    data.debts = data.debts || [];
-    data.debts.push(obj);
-  }
+  var obj = { id:vEditId||uid(), name:name, total:total, remaining:remaining, monthly:monthly, totalMonths:monthly > 0 ? Math.round(total / monthly) : 0, months:monthly > 0 ? Math.round(remaining / monthly) : 0, currency:currency };
+  if (vEditId) { var idx = (data.debts || []).findIndex(function(x) { return x.id === vEditId; }); if (idx > -1) data.debts[idx] = obj; }
+  else { data.debts = data.debts || []; data.debts.push(obj); }
   save(); closeVModal('modalDebt'); renderVault();
 }
-
 function deleteDebt() {
   if (!vEditId) return;
-  data.debts = (data.debts||[]).filter(function(x) { return x.id !== vEditId; });
+  data.debts = (data.debts || []).filter(function(x) { return x.id !== vEditId; });
   save(); closeVModal('modalDebt'); renderVault();
 }
 
 function saveSub() {
   var name     = document.getElementById('subName').value.trim();
   var currency = document.getElementById('subCurrency').value;
-  var amount   = parseFloat(document.getElementById('subAmount').value) || 0;
+  var amount   = parseNum('subAmount');
   var renewal  = document.getElementById('subRenewal').value;
   var accName  = document.getElementById('subAccount').value;
   var nextDate = document.getElementById('subNextDate').value;
   if (!name) { document.getElementById('subName').focus(); return; }
-
-  var obj = { id: vEditId || uid(), name: name, amount: amount, currency: currency, renewal: renewal, accountName: accName, nextDate: nextDate };
-  if (vEditId) {
-    var idx = (data.subscriptions||[]).findIndex(function(x) { return x.id === vEditId; });
-    if (idx > -1) data.subscriptions[idx] = obj;
-  } else {
-    data.subscriptions = data.subscriptions || [];
-    data.subscriptions.push(obj);
-  }
+  var obj = { id:vEditId||uid(), name:name, amount:amount, currency:currency, renewal:renewal, accountName:accName, nextDate:nextDate };
+  if (vEditId) { var idx = (data.subscriptions || []).findIndex(function(x) { return x.id === vEditId; }); if (idx > -1) data.subscriptions[idx] = obj; }
+  else { data.subscriptions = data.subscriptions || []; data.subscriptions.push(obj); }
   save(); closeVModal('modalSub'); renderVault();
 }
-
 function deleteSub() {
   if (!vEditId) return;
-  data.subscriptions = (data.subscriptions||[]).filter(function(x) { return x.id !== vEditId; });
+  data.subscriptions = (data.subscriptions || []).filter(function(x) { return x.id !== vEditId; });
   save(); closeVModal('modalSub'); renderVault();
 }
 
@@ -2488,94 +1337,110 @@ function saveInvestment() {
   var name     = document.getElementById('invName').value.trim();
   var type     = document.getElementById('invType').value;
   var currency = document.getElementById('invCurrency').value;
-  var invested = parseFloat(document.getElementById('invInvested').value) || 0;
-  var value    = parseFloat(document.getElementById('invValue').value) || 0;
-  var monthly  = parseFloat(document.getElementById('invMonthly').value) || 0;
+  var invested = parseNum('invInvested');
+  var value    = parseNum('invValue');
+  var monthly  = parseNum('invMonthly');
   if (!name) { document.getElementById('invName').focus(); return; }
-
-  var obj = { id: vEditId || uid(), name: name, type: type, totalInvested: invested, currentValue: value, currency: currency, monthlyAmount: monthly };
-  if (vEditId) {
-    var idx = (data.investments||[]).findIndex(function(x) { return x.id === vEditId; });
-    if (idx > -1) data.investments[idx] = obj;
-  } else {
-    data.investments = data.investments || [];
-    data.investments.push(obj);
-  }
+  var obj = { id:vEditId||uid(), name:name, type:type, totalInvested:invested, currentValue:value, currency:currency, monthlyAmount:monthly };
+  if (vEditId) { var idx = (data.investments || []).findIndex(function(x) { return x.id === vEditId; }); if (idx > -1) data.investments[idx] = obj; }
+  else { data.investments = data.investments || []; data.investments.push(obj); }
   save(); closeVModal('modalInv'); renderVault();
 }
-
 function deleteInvestment() {
   if (!vEditId) return;
-  data.investments = (data.investments||[]).filter(function(x) { return x.id !== vEditId; });
+  data.investments = (data.investments || []).filter(function(x) { return x.id !== vEditId; });
   save(); closeVModal('modalInv'); renderVault();
 }
 
-// ─── Reconcile ───
-var reconcileAccountId = null;
+// ── Edit TX modal ──
+function openEditModal(id) {
+  var tx = (data.transactions || []).find(function(t) { return t.id === id; });
+  if (!tx) return;
+  editTxId = id;
+  document.getElementById('eCurrency').value = tx.currency || 'EUR';
+  refreshEditAccounts();
+  document.getElementById('eAccount').value = tx.accountId || '';
+  var cats = (data.categories || []).filter(function(c) { return c.type === (tx.type === 'in' ? 'income' : 'expense'); });
+  document.getElementById('eCategory').innerHTML = cats.map(function(c) { return '<option value="' + c.name + '">' + c.name + '</option>'; }).join('');
+  document.getElementById('eCategory').value = tx.category || '';
+  document.getElementById('eAmount').value   = fmtForInput(tx.amount);
+  document.getElementById('eDate').value     = tx.date || today();
+  document.getElementById('eNote').value     = tx.note || '';
+  document.getElementById('modalEditTx').classList.add('open');
+}
+function refreshEditAccounts() {
+  var cur  = document.getElementById('eCurrency').value;
+  var accs = cur === 'IDR' ? (data.idrAccounts || []) : (data.eurAccounts || []);
+  document.getElementById('eAccount').innerHTML = accs.map(function(a) { return '<option value="' + a.id + '">' + a.name + '</option>'; }).join('');
+}
+function closeEditModal() { document.getElementById('modalEditTx').classList.remove('open'); editTxId = null; }
+function saveEditTx() {
+  var tx = (data.transactions || []).find(function(t) { return t.id === editTxId; });
+  if (!tx) return;
+  var newAcc = allAccounts().find(function(a) { return a.id === document.getElementById('eAccount').value; });
+  applyTxToBalance(tx, -1);
+  tx.amount      = parseNum('eAmount');
+  tx.accountId   = document.getElementById('eAccount').value;
+  tx.accountName = newAcc ? newAcc.name : tx.accountName;
+  tx.currency    = document.getElementById('eCurrency').value;
+  tx.category    = document.getElementById('eCategory').value;
+  tx.date        = document.getElementById('eDate').value || today();
+  tx.note        = document.getElementById('eNote').value.trim();
+  applyTxToBalance(tx, 1);
+  save(); closeEditModal(); renderTrack();
+}
+function deleteEditTx() {
+  var tx = (data.transactions || []).find(function(t) { return t.id === editTxId; });
+  if (tx) applyTxToBalance(tx, -1);
+  data.transactions = (data.transactions || []).filter(function(t) { return t.id !== editTxId; });
+  save(); closeEditModal(); renderTrack();
+}
+document.getElementById('modalEditTx').addEventListener('click', function(e) { if (e.target === this) closeEditModal(); });
 
+// ── Reconcile ──
 function openReconcileModal(accountId) {
-  reconcileAccountId = accountId;
+  reconAccountId = accountId;
   var acc = allAccounts().find(function(a) { return a.id === accountId; });
   if (!acc) return;
-  document.getElementById('reconcileAccName').textContent    = acc.name;
-  document.getElementById('reconcileCurrentBal').textContent = acc.currency === 'IDR' ? fmtIdr(acc.balance) : fmtEurDec(acc.balance);
-  document.getElementById('reconcileActual').value = '';
-  document.getElementById('reconcileNote').value   = '';
-  document.getElementById('reconcileDelta').textContent = '—';
-  document.getElementById('reconcileDelta').className   = 'reconcile-delta-val zero';
+  document.getElementById('reconAccName').textContent = acc.name;
+  document.getElementById('reconCurrent').textContent = fmtAmt(acc.balance, acc.currency);
+  document.getElementById('reconActual').value        = '';
+  document.getElementById('reconNote').value          = '';
+  document.getElementById('reconDelta').textContent   = '\u2014';
+  document.getElementById('reconDelta').className     = 'recon-delta zero';
   document.getElementById('modalReconcile').classList.add('open');
-  setTimeout(function() { document.getElementById('reconcileActual').focus(); }, 100);
 }
-
-function updateReconcileDelta() {
-  var acc = allAccounts().find(function(a) { return a.id === reconcileAccountId; });
+function updateReconDelta() {
+  var acc = allAccounts().find(function(a) { return a.id === reconAccountId; });
   if (!acc) return;
-  var deltaEl = document.getElementById('reconcileDelta');
-  var raw     = document.getElementById('reconcileActual').value;
-  if (!raw) { deltaEl.textContent = '—'; deltaEl.className = 'reconcile-delta-val zero'; return; }
-  var actual = parseFloat(raw) || 0;
-  var diff   = actual - acc.balance;
-  var sign   = diff > 0 ? '+' : diff < 0 ? '−' : '';
-  var fmt    = acc.currency === 'IDR' ? fmtIdr(Math.abs(diff)) : fmtEurDec(Math.abs(diff));
-  deltaEl.textContent = diff === 0 ? 'No change' : sign + fmt;
-  deltaEl.className   = 'reconcile-delta-val ' + (diff > 0 ? 'positive' : diff < 0 ? 'negative' : 'zero');
+  var actual  = parseFloat((document.getElementById('reconActual').value || '').replace(/\./g, '').replace(',', '.'));
+  var deltaEl = document.getElementById('reconDelta');
+  if (isNaN(actual)) { deltaEl.textContent = '\u2014'; deltaEl.className = 'recon-delta zero'; return; }
+  var diff = actual - acc.balance;
+  deltaEl.textContent = (diff > 0 ? '+' : '') + fmtAmt(diff, acc.currency);
+  deltaEl.className   = 'recon-delta ' + (diff > 0 ? 'pos' : diff < 0 ? 'neg' : 'zero');
 }
-
-function saveReconcile() {
-  var acc = allAccounts().find(function(a) { return a.id === reconcileAccountId; });
+function confirmReconcile() {
+  var acc = allAccounts().find(function(a) { return a.id === reconAccountId; });
   if (!acc) return;
-  var raw = document.getElementById('reconcileActual').value;
-  if (!raw) { document.getElementById('reconcileActual').focus(); return; }
-  var actual = parseFloat(raw) || 0;
-  var note   = document.getElementById('reconcileNote').value.trim() || 'Reconciliation';
-  var diff   = actual - acc.balance;
-  if (diff !== 0) {
-    data.transactions.push({
-      id: uid(), type: diff > 0 ? 'in' : 'out',
-      currency: acc.currency, amount: Math.abs(diff),
-      category: 'Reconciliation', note: note,
-      date: today(), accountId: acc.id, accountName: acc.name,
-      pending: false,
-    });
-    var arr = acc.currency === 'IDR' ? data.idrAccounts : data.eurAccounts;
-    var idx = arr.findIndex(function(x) { return x.id === acc.id; });
-    if (idx > -1) arr[idx].balance = actual;
+  var actual = parseFloat((document.getElementById('reconActual').value || '').replace(/\./g, '').replace(',', '.'));
+  if (isNaN(actual)) { document.getElementById('reconActual').focus(); return; }
+  var diff = actual - acc.balance;
+  var note = document.getElementById('reconNote').value.trim() || 'Reconciliation';
+  if (Math.abs(diff) > 0.001) {
+    data.transactions.push({ id:uid(), type:diff > 0 ? 'in' : 'out', currency:acc.currency, amount:Math.abs(diff), category:'Reconciliation', note:note, date:today(), accountId:acc.id, accountName:acc.name, pending:false, addedAt:Date.now() });
   }
-  save();
-  closeVModal('modalReconcile');
-  renderVault();
+  acc.balance = actual;
+  save(); closeVModal('modalReconcile'); renderVault();
+  if (currentTab === 'track') renderTrack();
 }
 
-
-// ═══════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════
-(function init() {
+// ── Init ──
+(function() {
   renderTrack();
-
   setTimeout(function() {
     var nav = document.getElementById('bottomNav');
-    var w = nav.offsetWidth / 3;
+    var w   = nav.offsetWidth / 3;
     document.getElementById('navBar').style.left  = '0px';
     document.getElementById('navBar').style.width = w + 'px';
   }, 50);
